@@ -1,7 +1,4 @@
-use super::super::managers::{
-    events::HealthIsFive,
-    tasks::{Haul, TaskManager},
-};
+use super::super::managers::events::HealthIsFive;
 use bevy::prelude::{EventReader, Events, Local, Query, Res, ResMut};
 
 pub struct Health {
@@ -30,10 +27,8 @@ pub fn health_changed_dispatcher(
 pub fn health_changed_listener(
     events: Res<Events<HealthIsFive>>,
     mut event_reader: Local<EventReader<HealthIsFive>>,
-    mut task_manager: ResMut<TaskManager>,
 ) {
     for _event in event_reader.iter(&events) {
-        let haul = Haul;
-        task_manager.register_task(haul);
+        println!("Health reached 5!");
     }
 }

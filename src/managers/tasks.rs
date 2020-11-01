@@ -6,7 +6,6 @@ pub trait TaskAction {
 }
 
 pub struct Haul;
-pub struct Build;
 
 impl TaskAction for Haul {
     fn run_task(&self) {
@@ -14,15 +13,12 @@ impl TaskAction for Haul {
     }
 }
 
+pub struct Build;
+
 impl TaskAction for Build {
     fn run_task(&self) {
         println!("Build running");
     }
-}
-
-pub enum GameTasks {
-    Haul(Haul),
-    Build(Build),
 }
 
 pub struct TaskManager {
