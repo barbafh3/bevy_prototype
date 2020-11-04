@@ -5,19 +5,16 @@ pub struct Health {
     pub value: i32,
 }
 
-pub fn change_health(mut query: Query<&mut Health>) {
-    for mut health in &mut query.iter() {
-        if health.value <= 5 {
-            health.value += 1;
-        }
-    }
+pub fn change_health(mut _query: Query<&Health>) {
+    // for mut health in query.iter() {
+    //     if health.value <= 5 {
+    //         health.value += 1;
+    //     }
+    // }
 }
 
-pub fn health_changed_dispatcher(
-    mut events: ResMut<Events<HealthIsFive>>,
-    mut query: Query<&Health>,
-) {
-    for health in &mut query.iter() {
+pub fn health_changed_dispatcher(mut events: ResMut<Events<HealthIsFive>>, query: Query<&Health>) {
+    for health in query.iter() {
         if health.value == 5 {
             events.send(HealthIsFive);
         }
