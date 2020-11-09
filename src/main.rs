@@ -9,15 +9,19 @@ use bevy_tilemap::{
     map::{TileMap, WorldMap},
     ChunkTilesPlugin,
 };
-use entities::Warehouse;
+use entities::{player::Player, Warehouse};
 use managers::{
     events::{HealthIsFive, RequireResources},
     tasks::{run_tasks, TaskManager},
     tilemap::{build_tilemap, load_atlas, MapState, TileSpriteHandles, WorldTile},
 };
+// use state_machine::CustomStateMachine;
 use systems::{
     health::{change_health, health_changed_dispatcher, health_changed_listener},
-    player::{move_player, Player},
+    player::{
+        states::{run_player_state, PlayerStates},
+        sys_player_input,
+    },
     warehouse::{receive_resource, request_haul, Resource},
 };
 
@@ -42,11 +46,11 @@ fn main() {
         >::default())
         .add_event::<HealthIsFive>()
         .add_event::<RequireResources>()
-        // .add_resource(GameState::new())
         .add_startup_system(startup.system())
         .add_system(load_atlas.system())
         .add_system(build_tilemap.system())
-        .add_system(move_player.system())
+        .add_system(run_player_state.system())
+        .add_system(sys_player_input.system())
         .add_system(receive_resource.system())
         .add_system(request_haul.system())
         .add_system(run_tasks.system())
@@ -75,13 +79,20 @@ fn startup(
     commands
         .spawn(SpriteComponents {
             material: materials.add(texture_handle.into()),
-            transform: Transform::from_translation(Vec3::new(0.0, 0.0, 0.0)),
+            transform: Transform::from_translation(Vec3::new(0.0, 0.0, 10.0)),
             sprite: Sprite::new(Vec2::new(16.0, 16.0)),
             ..Default::default()
         })
         .with(Player {
-            name: "Buba".to_string(),
-            speed: 500.0,
-        })
-        .with(Collider::Player);
+            state: PlayerStates::Idle,
+            speed: 40.0,
+            base_movement_tick: 3.0,
+            movement_tick: 3.0,
+            movement_radius: 50.0,
+            movement_target: get_idle_point(),
+        });
+}
+
+pub fn get_idle_point() -> Vec3 {
+    Vec3::new(50.0, 50.0, 0.0)
 }
