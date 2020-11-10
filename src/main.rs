@@ -10,7 +10,7 @@ use bevy_tilemap::{
     map::{TileMap, WorldMap},
     ChunkTilesPlugin,
 };
-use camera::{custom_cursor_system, CameraData, CustomCursorState};
+use camera::{sys_cursor_position, CameraData, CustomCursorState};
 use entities::{player::Player, Warehouse};
 use managers::{
     events::{HealthIsFive, RequireResources},
@@ -19,6 +19,9 @@ use managers::{
 };
 // use state_machine::CustomStateMachine;
 use systems::{
+    buildings::sys_building_follow_cursor,
+    buildings::sys_spawn_building,
+    buildings::CurrentBuilding,
     health::{change_health, health_changed_dispatcher, health_changed_listener},
     player::{
         states::{run_player_state, PlayerStates},
@@ -49,7 +52,9 @@ fn main() {
         .add_event::<HealthIsFive>()
         .add_event::<RequireResources>()
         .add_startup_system(startup.system())
-        .add_system(custom_cursor_system.system())
+        .add_system(sys_spawn_building.system())
+        .add_system(sys_building_follow_cursor.system())
+        .add_system(sys_cursor_position.system())
         .add_system(load_atlas.system())
         .add_system(build_tilemap.system())
         .add_system(run_player_state.system())
@@ -85,13 +90,19 @@ fn startup(
         position: Vec2::new(0.0, 0.0),
     });
 
+    commands.spawn(SpriteComponents {
+        ..Default::default()
+    });
+
+    commands.insert_resource(CurrentBuilding { entity: None });
+
     commands.spawn(UiCameraComponents::default());
 
     let texture_handle = asset_server.load("archer.png");
     commands
         .spawn(SpriteComponents {
             material: materials.add(texture_handle.into()),
-            transform: Transform::from_translation(Vec3::new(0.0, 0.0, 10.0)),
+            transform: Transform::from_translation(Vec3::new(0.0, 0.0, 100.0)),
             sprite: Sprite::new(Vec2::new(16.0, 16.0)),
             ..Default::default()
         })

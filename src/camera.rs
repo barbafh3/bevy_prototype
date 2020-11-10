@@ -20,7 +20,7 @@ pub struct CustomCursorState {
     pub camera_e: Entity,
 }
 
-pub fn custom_cursor_system(
+pub fn sys_cursor_position(
     mut state: ResMut<CustomCursorState>,
     mut camera_position: ResMut<CameraData>,
     ev_cursor: Res<Events<CursorMoved>>,
