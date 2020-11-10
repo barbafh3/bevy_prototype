@@ -1,3 +1,4 @@
+mod camera;
 mod entities;
 mod managers;
 mod systems;
@@ -9,6 +10,7 @@ use bevy_tilemap::{
     map::{TileMap, WorldMap},
     ChunkTilesPlugin,
 };
+use camera::{custom_cursor_system, CameraData, CustomCursorState};
 use entities::{player::Player, Warehouse};
 use managers::{
     events::{HealthIsFive, RequireResources},
@@ -47,6 +49,7 @@ fn main() {
         .add_event::<HealthIsFive>()
         .add_event::<RequireResources>()
         .add_startup_system(startup.system())
+        .add_system(custom_cursor_system.system())
         .add_system(load_atlas.system())
         .add_system(build_tilemap.system())
         .add_system(run_player_state.system())
@@ -71,9 +74,18 @@ fn startup(
     map.set_dimensions(Vec2::new(1.0, 1.0));
 
     commands.spawn((Warehouse,)).with(Resource { capacity: 0 });
-    commands
-        .spawn(Camera2dComponents::default())
-        .spawn(UiCameraComponents::default());
+
+    let camera = Camera2dComponents::default();
+    let e = commands.spawn(camera).current_entity().unwrap();
+    commands.insert_resource(CustomCursorState {
+        cursor: Default::default(),
+        camera_e: e,
+    });
+    commands.insert_resource(CameraData {
+        position: Vec2::new(0.0, 0.0),
+    });
+
+    commands.spawn(UiCameraComponents::default());
 
     let texture_handle = asset_server.load("archer.png");
     commands

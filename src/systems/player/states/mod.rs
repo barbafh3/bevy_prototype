@@ -4,20 +4,20 @@ pub mod knight;
 
 use bevy::{
     core::Time,
-    ecs::Mut,
+    // ecs::Mut,
     ecs::ResMut,
     ecs::{Query, Res},
     input::Input,
     prelude::AssetServer,
     prelude::Assets,
     prelude::Handle,
-    prelude::{KeyCode, SpriteComponents, Transform},
+    prelude::{KeyCode, Transform},
     sprite::ColorMaterial,
 };
 
 use crate::entities::player::Player;
 
-use self::{active::player_active_state, idle::player_idle_state, knight::player_knight_state};
+use self::{active::player_active_state, idle::player_idle_state};
 
 #[derive(Eq, PartialEq)]
 pub enum PlayerStates {
@@ -49,7 +49,6 @@ pub fn run_player_state(
                 *material = materials.add(texture_handle.into());
             }
             _ => {
-                println!("Not-a-knight state running!");
                 let texture_handle = asset_server.load("archer.png");
                 *material = materials.add(texture_handle.into());
             }
