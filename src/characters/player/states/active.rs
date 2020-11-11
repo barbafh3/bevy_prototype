@@ -6,7 +6,7 @@ use bevy::{
     prelude::{KeyCode, Transform},
 };
 
-use crate::entities::player::Player;
+use crate::characters::player::Player;
 
 pub fn player_active_state(
     delta: f32,

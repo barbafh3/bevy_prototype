@@ -4,7 +4,6 @@ pub mod knight;
 
 use bevy::{
     core::Time,
-    // ecs::Mut,
     ecs::ResMut,
     ecs::{Query, Res},
     input::Input,
@@ -15,9 +14,9 @@ use bevy::{
     sprite::ColorMaterial,
 };
 
-use crate::entities::player::Player;
-
 use self::{active::player_active_state, idle::player_idle_state};
+
+use super::Player;
 
 #[derive(Eq, PartialEq)]
 pub enum PlayerStates {

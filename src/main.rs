@@ -1,7 +1,7 @@
+mod buildings;
 mod camera;
-mod entities;
+mod characters;
 mod managers;
-mod systems;
 
 // use bevy::asset::AssetServerError;
 use bevy::prelude::*;
@@ -11,23 +11,19 @@ use bevy_tilemap::{
     ChunkTilesPlugin,
 };
 use camera::{sys_cursor_position, CameraData, CustomCursorState};
-use entities::{player::Player, Warehouse};
 use managers::{
     events::{HealthIsFive, RequireResources},
     tasks::{run_tasks, TaskManager},
     tilemap::{build_tilemap, load_atlas, MapState, TileSpriteHandles, WorldTile},
 };
 // use state_machine::CustomStateMachine;
-use systems::{
-    buildings::sys_building_follow_cursor,
-    buildings::sys_spawn_building,
-    buildings::CurrentBuilding,
-    health::{change_health, health_changed_dispatcher, health_changed_listener},
+use buildings::{sys_spawn_building, warehouse::sys_run_warehouse_state, CurrentBuilding};
+use characters::{
+    player::Player,
     player::{
         states::{run_player_state, PlayerStates},
         sys_player_input,
     },
-    warehouse::{receive_resource, request_haul, Resource},
 };
 
 pub const TILE_SIZE: i32 = 16;
@@ -53,18 +49,13 @@ fn main() {
         .add_event::<RequireResources>()
         .add_startup_system(startup.system())
         .add_system(sys_spawn_building.system())
-        .add_system(sys_building_follow_cursor.system())
         .add_system(sys_cursor_position.system())
         .add_system(load_atlas.system())
         .add_system(build_tilemap.system())
         .add_system(run_player_state.system())
         .add_system(sys_player_input.system())
-        .add_system(receive_resource.system())
-        .add_system(request_haul.system())
+        .add_system(sys_run_warehouse_state.system())
         .add_system(run_tasks.system())
-        .add_system(change_health.system())
-        .add_system(health_changed_dispatcher.system())
-        .add_system(health_changed_listener.system())
         .run();
 }
 
@@ -77,8 +68,6 @@ fn startup(
 ) {
     tile_sprite_handles.handles = asset_server.load_folder("textures").unwrap();
     map.set_dimensions(Vec2::new(1.0, 1.0));
-
-    commands.spawn((Warehouse,)).with(Resource { capacity: 0 });
 
     let camera = Camera2dComponents::default();
     let e = commands.spawn(camera).current_entity().unwrap();

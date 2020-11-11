@@ -1,7 +1,7 @@
 use bevy::{ecs::Mut, math::Vec3, prelude::Transform};
 use rand::prelude::*;
 
-use crate::{entities::player::Player, get_idle_point};
+use crate::{characters::player::Player, get_idle_point};
 
 pub fn player_idle_state(delta: f32, mut player: Mut<Player>, mut transform: Mut<Transform>) {
     let translation = &mut transform.translation;

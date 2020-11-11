@@ -1,12 +1,17 @@
 pub mod states;
 
-use bevy::{ecs::Query, ecs::Res, input::Input, prelude::KeyCode};
-
-use crate::entities::player::Player;
+use bevy::{ecs::Query, ecs::Res, input::Input, math::Vec3, prelude::KeyCode};
 
 use states::PlayerStates;
 
-// use super::states::PlayerStates;
+pub struct Player {
+    pub state: PlayerStates,
+    pub speed: f32,
+    pub base_movement_tick: f32,
+    pub movement_tick: f32,
+    pub movement_radius: f32,
+    pub movement_target: Vec3,
+}
 
 pub fn sys_player_input(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&mut Player>) {
     for mut player in query.iter_mut() {

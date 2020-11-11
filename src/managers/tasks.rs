@@ -30,7 +30,7 @@ impl TaskManager {
         TaskManager { tasks: vec![] }
     }
 
-    pub fn register_task<T: TaskAction + 'static + Send + Sync>(&mut self, task: T) {
+    pub fn _register_task<T: TaskAction + 'static + Send + Sync>(&mut self, task: T) {
         self.tasks.push(Box::new(task));
     }
 }
