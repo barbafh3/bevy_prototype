@@ -1,13 +1,13 @@
 pub mod warehouse;
 
 use bevy::{
-    ecs::Query,
+    // ecs::Query,
     ecs::Res,
     ecs::{Commands, Entity, ResMut},
     input::Input,
     math::Vec3,
     prelude::KeyCode,
-    prelude::MouseButton,
+    // prelude::MouseButton,
     prelude::SpriteComponents,
     prelude::Transform,
     prelude::{AssetServer, Assets},
@@ -16,11 +16,7 @@ use bevy::{
 
 use crate::camera::CameraData;
 
-use self::warehouse::WarehouseStates;
-
-pub struct Warehouse {
-    pub state: WarehouseStates,
-}
+use self::warehouse::Warehouse;
 
 pub struct CurrentBuilding {
     pub entity: Option<Entity>,
@@ -29,17 +25,17 @@ pub struct CurrentBuilding {
 pub fn sys_spawn_building(
     mut commands: Commands,
     keyboard_input: Res<Input<KeyCode>>,
-    mouse_input: Res<Input<MouseButton>>,
+    // mouse_input: Res<Input<MouseButton>>,
     asset_server: Res<AssetServer>,
     camera_data: Res<CameraData>,
     mut current_building: ResMut<CurrentBuilding>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    mut query: Query<&mut Warehouse>,
+    // mut query: Query<&mut Warehouse>,
 ) {
     let can_spawn_building =
         keyboard_input.just_released(KeyCode::T) && current_building.entity.is_none();
     if can_spawn_building {
-        let texture_handle = asset_server.load("warehouse.png");
+        let texture_handle = asset_server.load("under_construction.png");
         commands
             .spawn(SpriteComponents {
                 material: materials.add(texture_handle.into()),
@@ -50,20 +46,8 @@ pub fn sys_spawn_building(
                 )),
                 ..Default::default()
             })
-            .with(Warehouse {
-                state: WarehouseStates::Placing,
-            });
+            .with(Warehouse::new());
         current_building.entity = commands.current_entity();
-    }
-    if mouse_input.just_released(MouseButton::Right) && current_building.entity.is_some() {
-        commands.despawn(current_building.entity.unwrap());
-        current_building.entity = None;
-    }
-    if mouse_input.just_released(MouseButton::Left) {
-        if let Ok(mut warehouse) = query.get_mut(current_building.entity.unwrap()) {
-            warehouse.state = WarehouseStates::Placed;
-            current_building.entity = None;
-        }
     }
 }
 

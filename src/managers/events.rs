@@ -1,2 +1,2 @@
-pub struct HealthIsFive;
-pub struct RequireResources;
+// pub struct HealthIsFive;
+// pub struct RequireResources;
