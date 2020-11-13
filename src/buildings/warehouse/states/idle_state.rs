@@ -17,7 +17,7 @@ pub fn state_warehouse_idle(
             let texture_handle = asset_server.load("warehouse.png");
             *material = materials.add(texture_handle.into());
             warehouse.warehouse_sprite_added = true;
+            println!("Warehouse is idle!");
         }
-        println!("Warehouse is idle!");
     }
 }

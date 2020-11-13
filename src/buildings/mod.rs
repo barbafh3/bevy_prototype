@@ -13,6 +13,7 @@ use bevy::{
     prelude::{AssetServer, Assets},
     sprite::ColorMaterial,
 };
+use bevy_rapier2d::rapier::{dynamics::RigidBodyBuilder, geometry::ColliderBuilder};
 
 use crate::camera::CameraData;
 
@@ -36,6 +37,8 @@ pub fn sys_spawn_building(
         keyboard_input.just_released(KeyCode::T) && current_building.entity.is_none();
     if can_spawn_building {
         let texture_handle = asset_server.load("under_construction.png");
+        let rigid_body = RigidBodyBuilder::new_dynamic().translation(0.0, 3.0);
+        let collider = ColliderBuilder::ball(0.5);
         commands
             .spawn(SpriteComponents {
                 material: materials.add(texture_handle.into()),
@@ -46,7 +49,8 @@ pub fn sys_spawn_building(
                 )),
                 ..Default::default()
             })
-            .with(Warehouse::new());
+            .with(Warehouse::new())
+            .with((rigid_body, collider));
         current_building.entity = commands.current_entity();
     }
 }

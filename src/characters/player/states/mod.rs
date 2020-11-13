@@ -13,6 +13,7 @@ use bevy::{
     prelude::{KeyCode, Transform},
     sprite::ColorMaterial,
 };
+use bevy_rapier2d::rapier::dynamics::RigidBody;
 
 use self::{active::player_active_state, idle::player_idle_state};
 

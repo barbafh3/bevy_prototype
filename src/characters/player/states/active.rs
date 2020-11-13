@@ -5,6 +5,10 @@ use bevy::{
     math::Vec3,
     prelude::{KeyCode, Transform},
 };
+use bevy_rapier2d::{
+    na::Vector2,
+    rapier::{dynamics::RigidBody, ncollide::math::Isometry},
+};
 
 use crate::characters::player::Player;
 
@@ -29,4 +33,6 @@ pub fn player_active_state(
         *direction.y_mut() = direction.y() + 1.0;
     }
     *translation += direction * player.speed * delta;
+    // let vector = Vector2::new(translation.x(), translation.y());
+    // rigid_body.set_position(Isometry::new(vector, 0.0));
 }
