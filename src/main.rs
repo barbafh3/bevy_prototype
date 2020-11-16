@@ -7,7 +7,9 @@ mod managers;
 // use bevy::asset::AssetServerError;
 use bevy::prelude::*;
 use bevy_rapier2d::{
-    physics::{EventQueue, RapierPhysicsPlugin},
+    na::Vector2,
+    physics::{EventQueue, RapierConfiguration, RapierPhysicsPlugin, RigidBodyHandleComponent},
+    rapier::dynamics::RigidBodySet,
     rapier::{dynamics::RigidBodyBuilder, geometry::ColliderBuilder},
     render::RapierRenderPlugin,
 };
@@ -35,15 +37,15 @@ pub const TILE_SIZE: i32 = 16;
 pub const TILEMAP_HEIGHT: i32 = 50;
 pub const TILEMAP_WIDTH: i32 = 50;
 
-pub enum Collider {
-    Player,
+pub struct RigidBodyRotationState {
+    is_locked: bool,
 }
 
 fn main() {
     let mut app = App::build();
-    app.add_startup_system(startup.system());
     load_resources(&mut app);
     load_plugins(&mut app);
+    load_startup_systems(&mut app);
     load_systems(&mut app);
     app.run();
 }
@@ -54,7 +56,9 @@ fn startup(
     // mut tile_sprite_handles: ResMut<TileSpriteHandles>,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
+    mut rapier_config: ResMut<RapierConfiguration>,
 ) {
+    rapier_config.gravity = Vector2::new(0.0, -10.0);
     // tile_sprite_handles.handles = asset_server.load_folder("textures").unwrap();
     // map.set_dimensions(Vec2::new(1.0, 1.0));
 
@@ -73,35 +77,48 @@ fn startup(
     commands.spawn(UiCameraComponents::default());
 
     let texture_handle = asset_server.load("archer.png");
-    let rigid_body2 = RigidBodyBuilder::new_kinematic()
-        .mass(0.0)
-        .translation(50.0, 50.0);
-    let collider2 = ColliderBuilder::ball(10.0).sensor(true);
+    let rigid_body = RigidBodyBuilder::new_dynamic()
+        .translation(0.0, 100.0)
+        .mass(100.0);
+    let collider = ColliderBuilder::ball(10.0);
     commands
-        .spawn(SpriteComponents {
-            material: materials.add(texture_handle.into()),
-            transform: Transform::from_translation(Vec3::new(0.0, 0.0, 100.0)),
-            sprite: Sprite::new(Vec2::new(16.0, 16.0)),
-            ..Default::default()
-        })
+        .spawn((rigid_body, collider))
         .with(Player {
-            state: PlayerStates::Idle,
-            speed: 40.0,
+            state: PlayerStates::Run,
+            speed: 100.0,
             base_movement_tick: 3.0,
             movement_tick: 3.0,
             movement_radius: 50.0,
             movement_target: get_idle_point(),
         })
-        .with_bundle((rigid_body2, collider2));
+        .with_bundle(SpriteComponents {
+            material: materials.add(texture_handle.into()),
+            transform: Transform::from_translation(Vec3::new(0.0, 100.0, 100.0)),
+            sprite: Sprite::new(Vec2::new(16.0, 16.0)),
+            ..Default::default()
+        });
     let rigid_body1 = RigidBodyBuilder::new_static();
-    let collider1 = ColliderBuilder::cuboid(10.0, 1.0);
+    let collider1 = ColliderBuilder::cuboid(1000.0, 1.0);
     commands.spawn((rigid_body1, collider1));
+    let rigid_body2 = RigidBodyBuilder::new_static().translation(0.0, 20.0);
+    let collider2 = ColliderBuilder::ball(50.0);
+    commands.spawn((rigid_body2, collider2));
 }
 
-fn load_resources(app: &mut AppBuilder) {
-    app.add_resource(TaskManager::new());
-    // .init_resource::<TileSpriteHandles>()
-    // .init_resource::<MapState>();
+fn lock_rigidbody_rotation(
+    mut lock_state: ResMut<RigidBodyRotationState>,
+    mut rb_set: ResMut<RigidBodySet>,
+    mut query: Query<&mut RigidBodyHandleComponent>,
+) {
+    if !lock_state.is_locked {
+        println!("Query length is {}", query.iter_mut().len());
+        for rb_handle in query.iter_mut() {
+            let rb_index = rb_handle.handle();
+            let mut rb = rb_set.get_mut(rb_index).unwrap();
+            rb.mass_properties.inv_principal_inertia_sqrt = 0.0;
+        }
+        lock_state.is_locked = true;
+    }
 }
 
 fn load_plugins(app: &mut AppBuilder) {
@@ -115,6 +132,17 @@ fn load_plugins(app: &mut AppBuilder) {
     // >::default());
 }
 
+fn load_resources(app: &mut AppBuilder) {
+    app.add_resource(TaskManager::new())
+        .add_resource(RigidBodyRotationState { is_locked: false });
+    // .init_resource::<TileSpriteHandles>()
+    // .init_resource::<MapState>();
+}
+
+fn load_startup_systems(app: &mut AppBuilder) {
+    app.add_startup_system(startup.system());
+}
+
 fn load_systems(app: &mut AppBuilder) {
     core_systems(app);
     // tilemap_systems(app);
@@ -125,6 +153,7 @@ fn load_systems(app: &mut AppBuilder) {
 
 fn core_systems(app: &mut AppBuilder) {
     app.add_system(sys_spawn_building.system())
+        .add_system(lock_rigidbody_rotation.system())
         .add_system(print_events.system())
         .add_system(sys_cursor_position.system());
 }

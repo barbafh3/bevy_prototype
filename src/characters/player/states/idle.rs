@@ -1,26 +1,44 @@
-use bevy::{ecs::Mut, math::Vec3, prelude::Transform};
+use bevy::{
+    ecs::{Mut, Res},
+    input::Input,
+    math::Vec3,
+    prelude::KeyCode,
+    prelude::Transform,
+};
 use rand::prelude::*;
 
 use crate::{characters::player::Player, get_idle_point};
 
-pub fn player_idle_state(delta: f32, mut player: Mut<Player>, mut transform: Mut<Transform>) {
-    let translation = &mut transform.translation;
-    player.movement_tick = run_movement_tick(&player, delta);
-    let can_change_target = player.movement_tick <= 0.0;
-    if can_change_target {
-        player.movement_target = get_new_position(
-            get_idle_point().x(),
-            get_idle_point().y(),
-            player.movement_radius.clone(),
-        );
-        player.movement_tick = player.base_movement_tick.clone();
+use super::PlayerStates;
+
+pub fn state_player_idle(
+    delta: f32,
+    keyboard_input: &Res<Input<KeyCode>>,
+    mut player: Mut<Player>,
+    mut transform: Mut<Transform>,
+) {
+    if keyboard_input.pressed(KeyCode::Left) || keyboard_input.pressed(KeyCode::Right) {
+        println!("Player state changed to Run");
+        player.state = PlayerStates::Run;
     }
-    let target_vector = player.movement_target - translation.clone();
-    let is_far_enough = target_vector.x().abs() > 2.0 && target_vector.y().abs() > 2.0;
-    if is_far_enough {
-        let direction = normalize(target_vector);
-        *translation += direction * player.speed * delta;
-    }
+
+    // let translation = &mut transform.translation;
+    // player.movement_tick = run_movement_tick(&player, delta);
+    // let can_change_target = player.movement_tick <= 0.0;
+    // if can_change_target {
+    //     player.movement_target = get_new_position(
+    //         get_idle_point().x(),
+    //         get_idle_point().y(),
+    //         player.movement_radius.clone(),
+    //     );
+    //     player.movement_tick = player.base_movement_tick.clone();
+    // }
+    // let target_vector = player.movement_target - translation.clone();
+    // let is_far_enough = target_vector.x().abs() > 2.0 && target_vector.y().abs() > 2.0;
+    // if is_far_enough {
+    //     let direction = normalize(target_vector);
+    //     *translation += direction * player.speed * delta;
+    // }
 }
 
 fn normalize(position: Vec3) -> Vec3 {
