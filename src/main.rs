@@ -10,7 +10,10 @@ use bevy_rapier2d::{
     na::Vector2,
     physics::{EventQueue, RapierConfiguration, RapierPhysicsPlugin, RigidBodyHandleComponent},
     rapier::dynamics::RigidBodySet,
-    rapier::{dynamics::RigidBodyBuilder, geometry::ColliderBuilder},
+    rapier::{
+        dynamics::RigidBodyBuilder,
+        geometry::{ColliderBuilder, InteractionGroups},
+    },
     render::RapierRenderPlugin,
 };
 use bevy_tilemap::{
@@ -58,6 +61,7 @@ fn startup(
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut rapier_config: ResMut<RapierConfiguration>,
 ) {
+    let mut collision_groups = InteractionGroups::new(1, 1);
     rapier_config.gravity = Vector2::new(0.0, -10.0);
     // tile_sprite_handles.handles = asset_server.load_folder("textures").unwrap();
     // map.set_dimensions(Vec2::new(1.0, 1.0));
@@ -77,9 +81,7 @@ fn startup(
     commands.spawn(UiCameraComponents::default());
 
     let texture_handle = asset_server.load("archer.png");
-    let rigid_body = RigidBodyBuilder::new_dynamic()
-        .translation(0.0, 100.0)
-        .mass(100.0);
+    let rigid_body = RigidBodyBuilder::new_dynamic().translation(0.0, 100.0);
     let collider = ColliderBuilder::ball(10.0);
     commands
         .spawn((rigid_body, collider))
@@ -97,11 +99,13 @@ fn startup(
             sprite: Sprite::new(Vec2::new(16.0, 16.0)),
             ..Default::default()
         });
+
     let rigid_body1 = RigidBodyBuilder::new_static();
     let collider1 = ColliderBuilder::cuboid(1000.0, 1.0);
     commands.spawn((rigid_body1, collider1));
+
     let rigid_body2 = RigidBodyBuilder::new_static().translation(0.0, 20.0);
-    let collider2 = ColliderBuilder::ball(50.0);
+    let collider2 = ColliderBuilder::ball(50.0).sensor(true);
     commands.spawn((rigid_body2, collider2));
 }
 

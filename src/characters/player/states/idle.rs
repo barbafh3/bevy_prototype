@@ -18,7 +18,6 @@ pub fn state_player_idle(
     mut transform: Mut<Transform>,
 ) {
     if keyboard_input.pressed(KeyCode::Left) || keyboard_input.pressed(KeyCode::Right) {
-        println!("Player state changed to Run");
         player.state = PlayerStates::Run;
     }
 
