@@ -4,6 +4,7 @@ mod characters;
 mod collision;
 mod managers;
 
+use std::fmt::{self, Debug, Display};
 // use bevy::asset::AssetServerError;
 use bevy::prelude::*;
 use bevy_rapier2d::{
@@ -11,8 +12,12 @@ use bevy_rapier2d::{
     physics::{EventQueue, RapierConfiguration, RapierPhysicsPlugin, RigidBodyHandleComponent},
     rapier::dynamics::RigidBodySet,
     rapier::{
+        data::arena::Index,
         dynamics::RigidBodyBuilder,
-        geometry::{ColliderBuilder, InteractionGroups},
+        geometry::Proximity,
+        geometry::{
+            ColliderBuilder, ColliderHandle, ColliderSet, InteractionGroups, ProximityEvent,
+        },
     },
     render::RapierRenderPlugin,
 };
@@ -81,10 +86,13 @@ fn startup(
     commands.spawn(UiCameraComponents::default());
 
     let texture_handle = asset_server.load("archer.png");
-    let rigid_body = RigidBodyBuilder::new_dynamic().translation(0.0, 100.0);
-    let collider = ColliderBuilder::ball(10.0);
-    commands
-        .spawn((rigid_body, collider))
+    let player = commands
+        .spawn(SpriteComponents {
+            material: materials.add(texture_handle.into()),
+            transform: Transform::from_translation(Vec3::new(0.0, 100.0, 100.0)),
+            sprite: Sprite::new(Vec2::new(16.0, 16.0)),
+            ..Default::default()
+        })
         .with(Player {
             state: PlayerStates::Run,
             speed: 100.0,
@@ -93,20 +101,19 @@ fn startup(
             movement_radius: 50.0,
             movement_target: get_idle_point(),
         })
-        .with_bundle(SpriteComponents {
-            material: materials.add(texture_handle.into()),
-            transform: Transform::from_translation(Vec3::new(0.0, 100.0, 100.0)),
-            sprite: Sprite::new(Vec2::new(16.0, 16.0)),
-            ..Default::default()
-        });
+        .current_entity()
+        .unwrap();
+    let rigid_body = RigidBodyBuilder::new_dynamic().translation(0.0, 100.0);
+    let collider = ColliderBuilder::ball(10.0).user_data(player.to_bits() as u128);
+    commands.insert(player, (rigid_body, collider));
 
     let rigid_body1 = RigidBodyBuilder::new_static();
     let collider1 = ColliderBuilder::cuboid(1000.0, 1.0);
     commands.spawn((rigid_body1, collider1));
 
-    let rigid_body2 = RigidBodyBuilder::new_static().translation(0.0, 20.0);
-    let collider2 = ColliderBuilder::ball(50.0).sensor(true);
-    commands.spawn((rigid_body2, collider2));
+    // let rigid_body2 = RigidBodyBuilder::new_static().translation(0.0, 20.0);
+    // let collider2 = ColliderBuilder::ball(50.0).sensor(true);
+    // commands.spawn((rigid_body2, collider2));
 }
 
 fn lock_rigidbody_rotation(
@@ -158,7 +165,7 @@ fn load_systems(app: &mut AppBuilder) {
 fn core_systems(app: &mut AppBuilder) {
     app.add_system(sys_spawn_building.system())
         .add_system(lock_rigidbody_rotation.system())
-        .add_system(print_events.system())
+        // .add_system(print_events.system())
         .add_system(sys_cursor_position.system());
 }
 
@@ -180,12 +187,40 @@ pub fn get_idle_point() -> Vec3 {
     Vec3::new(50.0, 50.0, 0.0)
 }
 
-fn print_events(events: Res<EventQueue>) {
+fn print_events(
+    events: ResMut<EventQueue>,
+    mut collider_set: ResMut<ColliderSet>,
+    mut query: Query<&mut Player>,
+) {
     while let Ok(proximity_event) = events.proximity_events.pop() {
-        println!("Received proximity event: {:?}", proximity_event);
+        let (entity1, entity2) =
+            get_entities_from_proximity_event(proximity_event, &mut collider_set);
+        if let Ok(player) = query.get_mut(Entity::from_bits(entity1)) {
+            println!("{}", player.on_proximity_event(proximity_event.new_status));
+        }
+        if let Ok(player) = query.get_mut(Entity::from_bits(entity2)) {
+            println!("{}", player.on_proximity_event(proximity_event.new_status));
+        }
+        // println!("Received proximity event: {:?}", proximity_event);
     }
 
     while let Ok(contact_event) = events.contact_events.pop() {
         println!("Received contact event: {:?}", contact_event);
     }
+}
+
+pub fn get_entities_from_proximity_event(
+    proximity_event: ProximityEvent,
+    collider_set: &mut ResMut<ColliderSet>,
+) -> (u64, u64) {
+    return (
+        collider_set
+            .get_mut(proximity_event.collider1)
+            .unwrap()
+            .user_data as u64,
+        collider_set
+            .get_mut(proximity_event.collider2)
+            .unwrap()
+            .user_data as u64,
+    );
 }

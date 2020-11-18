@@ -1,7 +1,10 @@
 pub mod states;
 
+use std::fmt;
+
 use bevy::{ecs::Query, ecs::Res, input::Input, math::Vec3, prelude::KeyCode};
 
+use bevy_rapier2d::rapier::geometry::Proximity;
 use states::PlayerStates;
 
 pub struct Player {
@@ -31,5 +34,17 @@ pub fn sys_player_input(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&m
         //     player.state = PlayerStates::Knight;
         //     println!("Player state changed to Knight");
         // }
+    }
+}
+
+impl Player {
+    pub fn on_proximity_event(&self, entering: Proximity) -> String {
+        let mut output = "Player ".to_string();
+        match entering {
+            Proximity::Disjoint => output.push_str("just left a sensor"),
+            Proximity::Intersecting => output.push_str("entered a sensor"),
+            _ => (),
+        }
+        return output;
     }
 }

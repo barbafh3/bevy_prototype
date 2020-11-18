@@ -13,6 +13,7 @@ use bevy_rapier2d::{
 use crate::characters::player::Player;
 
 pub fn state_player_run(
+    delta: f32,
     keyboard_input: &Res<Input<KeyCode>>,
     rb_set: &mut ResMut<RigidBodySet>,
     mut player: Mut<Player>,
@@ -37,6 +38,7 @@ pub fn state_player_run(
         rb.linvel = Vector2::new(0.0, rb.linvel.y);
         player.state = super::PlayerStates::Idle;
     } else {
+        println!("Player trying to move");
         rb.linvel = Vector2::new(direction.x() * player.speed, rb.linvel.y);
     }
 }
