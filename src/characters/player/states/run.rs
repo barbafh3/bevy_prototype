@@ -10,10 +10,11 @@ use bevy_rapier2d::{
     na::Vector2, physics::RigidBodyHandleComponent, rapier::dynamics::RigidBodySet,
 };
 
-use crate::characters::player::Player;
+use crate::characters::player::{get_input_direction, Player};
+
+use super::PlayerStates;
 
 pub fn state_player_run(
-    delta: f32,
     keyboard_input: &Res<Input<KeyCode>>,
     rb_set: &mut ResMut<RigidBodySet>,
     mut player: Mut<Player>,
@@ -21,24 +22,13 @@ pub fn state_player_run(
 ) {
     let rb_index = rb_handle.handle();
     let mut rb = rb_set.get_mut(rb_index).unwrap();
-    let mut direction: Vec3 = Vec3::new(0.0, 0.0, 0.0);
-    if keyboard_input.pressed(KeyCode::Left) {
-        *direction.x_mut() = direction.x() - 1.0;
-    }
-    if keyboard_input.pressed(KeyCode::Right) {
-        *direction.x_mut() = direction.x() + 1.0;
-    }
-    if keyboard_input.pressed(KeyCode::Down) {
-        *direction.y_mut() = direction.y() - 1.0;
-    }
-    if keyboard_input.pressed(KeyCode::Up) {
-        *direction.y_mut() = direction.y() + 1.0;
-    }
+    let direction = get_input_direction(keyboard_input);
     if direction.x() == 0.0 && direction.y() == 0.0 {
-        rb.linvel = Vector2::new(0.0, rb.linvel.y);
-        player.state = super::PlayerStates::Idle;
+        // rb.linvel = Vector2::new(0.0, rb.linvel.y);
+        rb.linvel = Vector2::new(0.0, 0.0);
+        player.state = PlayerStates::Idle;
     } else {
-        println!("Player trying to move");
-        rb.linvel = Vector2::new(direction.x() * player.speed, rb.linvel.y);
+        // rb.linvel = Vector2::new(direction.x() * player.speed, rb.linvel.y);
+        rb.linvel = Vector2::new(direction.x() * player.speed, direction.y() * player.speed);
     }
 }

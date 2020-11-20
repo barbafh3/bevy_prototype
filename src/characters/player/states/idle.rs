@@ -7,7 +7,7 @@ use bevy::{
 };
 use rand::prelude::*;
 
-use crate::{characters::player::Player, get_idle_point};
+use crate::{characters::player::get_input_direction, characters::player::Player};
 
 use super::PlayerStates;
 
@@ -17,7 +17,8 @@ pub fn state_player_idle(
     mut player: Mut<Player>,
     mut transform: Mut<Transform>,
 ) {
-    if keyboard_input.pressed(KeyCode::Left) || keyboard_input.pressed(KeyCode::Right) {
+    let direction = get_input_direction(keyboard_input);
+    if direction.x() != 0.0 || direction.y() != 0.0 {
         player.state = PlayerStates::Run;
     }
 

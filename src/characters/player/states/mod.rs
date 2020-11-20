@@ -66,13 +66,7 @@ pub fn run_player_state(
             PlayerStates::Idle => {
                 state_player_idle(time.delta_seconds, &keyboard_input, player, transform)
             }
-            PlayerStates::Run => state_player_run(
-                time.delta_seconds,
-                &keyboard_input,
-                &mut rb_set,
-                player,
-                rb_handle,
-            ),
+            PlayerStates::Run => state_player_run(&keyboard_input, &mut rb_set, player, rb_handle),
             PlayerStates::Jump => state_player_jump(),
             _ => (),
         }

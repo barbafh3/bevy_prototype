@@ -39,12 +39,30 @@ pub fn sys_player_input(keyboard_input: Res<Input<KeyCode>>, mut query: Query<&m
 
 impl Player {
     pub fn on_proximity_event(&self, entering: Proximity) -> String {
-        let mut output = "Player ".to_string();
-        match entering {
-            Proximity::Disjoint => output.push_str("just left a sensor"),
-            Proximity::Intersecting => output.push_str("entered a sensor"),
-            _ => (),
-        }
+        let output = "".to_string();
+        // let mut output = "Player ".to_string();
+        // match entering {
+        //     Proximity::Disjoint => output.push_str("just left a sensor"),
+        //     Proximity::Intersecting => output.push_str("entered a sensor"),
+        //     _ => (),
+        // }
         return output;
     }
+}
+
+pub fn get_input_direction(keyboard_input: &Res<Input<KeyCode>>) -> Vec3 {
+    let mut direction: Vec3 = Vec3::new(0.0, 0.0, 0.0);
+    if keyboard_input.pressed(KeyCode::Left) {
+        *direction.x_mut() = direction.x() - 1.0;
+    }
+    if keyboard_input.pressed(KeyCode::Right) {
+        *direction.x_mut() = direction.x() + 1.0;
+    }
+    if keyboard_input.pressed(KeyCode::Down) {
+        *direction.y_mut() = direction.y() - 1.0;
+    }
+    if keyboard_input.pressed(KeyCode::Up) {
+        *direction.y_mut() = direction.y() + 1.0;
+    }
+    return direction;
 }

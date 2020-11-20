@@ -8,8 +8,12 @@ use bevy::{
     prelude::{Assets, Handle, Transform},
     sprite::ColorMaterial,
 };
+use bevy_rapier2d::rapier::geometry::Proximity;
 
-use crate::camera::CameraData;
+use crate::{
+    camera::CameraData,
+    managers::tasks::{haul::Haul, TaskManager},
+};
 
 use self::states::{
     construction_state::state_warehouse_construction, idle_state::state_warehouse_idle,
@@ -33,6 +37,25 @@ impl Warehouse {
             construction_time: 10.0,
             warehouse_sprite_added: false,
         }
+    }
+
+    pub fn on_proximity_event(
+        &self,
+        event: Proximity,
+        mut task_manager: &mut ResMut<TaskManager>,
+    ) -> String {
+        let mut output = "A body ".to_string();
+        match event {
+            Proximity::Intersecting => self.on_intersect(task_manager),
+            Proximity::Disjoint => output.push_str("just left the area"),
+            Proximity::WithinMargin => output.push_str("is nearby"),
+        }
+        return output;
+    }
+
+    fn on_intersect(&self, task_manager: &mut ResMut<TaskManager>) {
+        let haul = Haul::new(9.0, 1.0);
+        task_manager.register_task(haul);
     }
 }
 
