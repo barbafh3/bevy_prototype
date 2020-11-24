@@ -1,10 +1,10 @@
+use super::WarehouseStates;
+use crate::buildings::warehouse::Warehouse;
 use bevy::{
     ecs::{Mut, Res, ResMut},
     prelude::{AssetServer, Assets, Handle},
     sprite::ColorMaterial,
 };
-
-use crate::buildings::warehouse::{Warehouse, WarehouseStates};
 
 pub fn state_warehouse_idle(
     asset_server: &Res<AssetServer>,

@@ -1,41 +1,23 @@
-use std::fmt;
+use strum_macros::*;
 
-#[derive(Debug)]
-pub enum ConstructionResources {
+#[derive(Debug, Display, Hash, Eq, PartialEq, Clone, Copy, EnumIter)]
+pub enum GameResources {
     Wood,
     Stone,
     Plank,
     StonBrick,
 }
 
-impl fmt::Display for ConstructionResources {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-#[derive(Debug)]
-pub enum JobTypes {
+#[derive(Debug, Display)]
+pub enum Jobs {
     Hauler,
     Builder,
     Carpenter,
     Woodcutter,
 }
 
-impl fmt::Display for JobTypes {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
-}
-
-#[derive(Debug)]
-pub enum TaskTypes {
+#[derive(Debug, Display)]
+pub enum Tasks {
     Haul,
     Build,
-}
-
-impl fmt::Display for TaskTypes {
-    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
-        write!(f, "{:?}", self)
-    }
 }

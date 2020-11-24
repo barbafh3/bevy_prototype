@@ -1,3 +1,5 @@
+use super::WarehouseStates;
+use crate::{buildings::warehouse::Warehouse, buildings::CurrentBuilding, camera::CameraData};
 use bevy::{
     ecs::Mut,
     ecs::ResMut,
@@ -5,10 +7,9 @@ use bevy::{
     input::Input,
     prelude::MouseButton,
 };
-
-use crate::{
-    buildings::warehouse::Warehouse, buildings::warehouse::WarehouseStates,
-    buildings::CurrentBuilding,
+use bevy_rapier2d::{
+    na::Vector2, physics::RigidBodyHandleComponent, rapier::dynamics::RigidBodySet,
+    rapier::math::Isometry,
 };
 
 pub fn state_placing_warehouse(
@@ -16,16 +17,16 @@ pub fn state_placing_warehouse(
     mouse_input: &Res<Input<MouseButton>>,
     current_building: &mut ResMut<CurrentBuilding>,
     warehouse: &mut Mut<Warehouse>,
+    camera_data: &Res<CameraData>,
+    rb_set: &mut ResMut<RigidBodySet>,
+    rb_handle: Mut<RigidBodyHandleComponent>,
 ) {
-    // if !current_building.entity.is_none() {
-    //     if let Ok((mut warehouse, mut transform)) = query.get_mut(current_building.entity.unwrap())
-    //     {
-    //         if warehouse.state == WarehouseStates::Placing {
-    //             transform.translation = Vec3::new(
-    //                 camera_data.position.x(),
-    //                 camera_data.position.y(),
-    //                 transform.translation.z(),
-    //             );
+    let rb_index = rb_handle.handle();
+    let mut rb = rb_set.get_mut(rb_index).unwrap();
+    rb.position = Isometry::new(
+        Vector2::new(camera_data.position.x(), camera_data.position.y()),
+        0.0,
+    );
     if mouse_input.just_released(MouseButton::Right) && current_building.entity.is_some() {
         commands.despawn(current_building.entity.unwrap());
         current_building.entity = None;
@@ -34,7 +35,4 @@ pub fn state_placing_warehouse(
         warehouse.state = WarehouseStates::Construction;
         current_building.entity = None;
     }
-    // }
-    // }
-    // }
 }

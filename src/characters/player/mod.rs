@@ -1,7 +1,5 @@
 pub mod states;
 
-use std::fmt;
-
 use bevy::{ecs::Query, ecs::Res, input::Input, math::Vec3, prelude::KeyCode};
 
 use bevy_rapier2d::rapier::geometry::Proximity;

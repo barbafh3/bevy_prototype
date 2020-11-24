@@ -1,11 +1,4 @@
-use bevy::{
-    ecs::Mut,
-    ecs::Res,
-    ecs::ResMut,
-    input::Input,
-    math::{Quat, Vec3},
-    prelude::{KeyCode, Transform},
-};
+use bevy::{ecs::Mut, ecs::Res, ecs::ResMut, input::Input, prelude::KeyCode};
 use bevy_rapier2d::{
     na::Vector2, physics::RigidBodyHandleComponent, rapier::dynamics::RigidBodySet,
 };

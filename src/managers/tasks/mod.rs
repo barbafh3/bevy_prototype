@@ -1,15 +1,13 @@
 pub mod build;
 pub mod haul;
 
-use std::collections::HashMap;
-
+use crate::constants::enums::Tasks;
 use bevy::{
     core::Time,
     ecs::{Local, Res},
     prelude::{EventReader, Events, ResMut},
 };
-
-use crate::{constants::enums::TaskTypes, Teste};
+use std::collections::HashMap;
 
 pub trait TaskAction {
     fn run_task(&mut self, delta: f32, event: &mut ResMut<Events<TaskFinished>>);
@@ -19,7 +17,7 @@ pub trait TaskAction {
 
 pub struct TaskFinished {
     task_index: i32,
-    task_type: TaskTypes,
+    task_type: Tasks,
 }
 
 pub struct TaskManager {
@@ -61,7 +59,6 @@ pub fn sys_run_tasks(
 }
 
 pub fn sys_task_finished(
-    mut teste: ResMut<Teste>,
     mut task_manager: ResMut<TaskManager>,
     mut event_reader: Local<EventReader<TaskFinished>>,
     task_finished_events: Res<Events<TaskFinished>>,

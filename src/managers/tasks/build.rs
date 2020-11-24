@@ -3,7 +3,7 @@ use bevy::{
     prelude::Events,
 };
 
-use crate::constants::enums::TaskTypes;
+use crate::constants::enums::Tasks;
 
 use super::{TaskAction, TaskFinished};
 
@@ -40,7 +40,7 @@ impl Build {
     fn haul_finished(&'static self, mut event: ResMut<Events<TaskFinished>>) {
         event.send(TaskFinished {
             task_index: self.task_index,
-            task_type: TaskTypes::Build,
+            task_type: Tasks::Build,
         });
     }
 }

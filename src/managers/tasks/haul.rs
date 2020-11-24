@@ -1,9 +1,6 @@
-use bevy::{
-    ecs::{Entity, ResMut},
-    prelude::Events,
-};
+use bevy::{ecs::ResMut, prelude::Events};
 
-use crate::constants::enums::{ConstructionResources, TaskTypes};
+use crate::constants::enums::Tasks;
 
 use super::{TaskAction, TaskFinished};
 
@@ -36,7 +33,7 @@ impl TaskAction for Haul {
         } else {
             event.send(TaskFinished {
                 task_index: self.task_index.clone(),
-                task_type: TaskTypes::Haul,
+                task_type: Tasks::Haul,
             });
         }
     }
