@@ -14,4 +14,12 @@ impl StorageManager {
         global_storage.insert(GameResources::StonBrick, 0);
         StorageManager { global_storage }
     }
+
+    pub fn get_global_stored(&mut self, resource: GameResources) -> i32 {
+        return self.global_storage.get(&resource).unwrap().clone();
+    }
+
+    pub fn update_global_resource(&mut self, resource: GameResources, amount: i32) {
+        *self.global_storage.get_mut(&resource).unwrap() += amount;
+    }
 }

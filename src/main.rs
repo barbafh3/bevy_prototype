@@ -19,17 +19,21 @@ use bevy_tilemap::{
     map::{TileMap, WorldMap},
     ChunkTilesPlugin,
 };
-use buildings::{sys_spawn_building, warehouse::states::sys_run_warehouse_states, CurrentBuilding};
+use buildings::{
+    sys_spawn_building,
+    warehouse::{states::sys_run_warehouse_states, sys_warehouse_sensors},
+    CurrentBuilding,
+};
 use camera::{sys_cursor_position, CameraData, CustomCursorState};
 use characters::{
     hauler::{states::sys_run_hauler_state, Hauler},
     player::{states::run_player_state, sys_player_input},
 };
 use managers::{
+    storage::StorageManager,
     tasks::{sys_run_tasks, sys_task_finished, TaskFinished, TaskManager},
     tilemap::{build_tilemap, load_atlas, MapState, TileSpriteHandles, WorldTile},
 };
-use utils::collision_events::sys_print_events;
 
 pub struct RigidBodyRotationState {
     is_locked: bool,
@@ -136,6 +140,7 @@ fn load_plugins(app: &mut AppBuilder) {
 
 fn load_resources(app: &mut AppBuilder) {
     app.add_resource(TaskManager::new())
+        .add_resource(StorageManager::new())
         .add_resource(RigidBodyRotationState { is_locked: false })
         .init_resource::<TileSpriteHandles>()
         .init_resource::<MapState>();
@@ -157,7 +162,7 @@ fn load_systems(app: &mut AppBuilder) {
 fn core_systems(app: &mut AppBuilder) {
     app.add_system(sys_spawn_building.system())
         .add_system(lock_rigidbody_rotation.system())
-        .add_system(sys_print_events.system())
+        .add_system(sys_warehouse_sensors.system())
         .add_system(sys_task_finished.system())
         .add_system(sys_cursor_position.system());
 }

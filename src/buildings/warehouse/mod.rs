@@ -3,11 +3,19 @@ pub mod states;
 use self::states::WarehouseStates;
 use super::storage::*;
 use crate::{
+    characters::hauler::Hauler,
     constants::enums::GameResources,
-    managers::tasks::{haul::Haul, TaskManager},
+    managers::{
+        events::get_entities_from_proximity_event,
+        storage::StorageManager,
+        tasks::{haul::Haul, TaskManager},
+    },
 };
-use bevy::ecs::ResMut;
-use bevy_rapier2d::rapier::geometry::Proximity;
+use bevy::ecs::{Entity, Mut, Query, ResMut};
+use bevy_rapier2d::{
+    physics::EventQueue,
+    rapier::geometry::{ColliderSet, Proximity},
+};
 use std::collections::HashMap;
 
 pub struct Warehouse {
@@ -44,21 +52,19 @@ impl Warehouse {
 
     pub fn on_proximity_event(
         &self,
+        storage_manager: &mut ResMut<StorageManager>,
         event: Proximity,
-        task_manager: &mut ResMut<TaskManager>,
-    ) -> String {
-        let mut output = "A body ".to_string();
+        hauler: &mut Mut<Hauler>,
+    ) {
         match event {
-            Proximity::Intersecting => self.on_intersect(task_manager),
-            Proximity::Disjoint => output.push_str("just left the area"),
-            Proximity::WithinMargin => output.push_str("is nearby"),
+            Proximity::Intersecting => self.on_intersect(hauler, storage_manager),
+            _ => (),
         }
-        return output;
     }
 
-    fn on_intersect(&self, task_manager: &mut ResMut<TaskManager>) {
-        let haul = Haul::new(9.0, 1.0);
-        task_manager.register_task(haul);
+    fn on_intersect(&self, hauler: &mut Mut<Hauler>, storage_manager: &mut ResMut<StorageManager>) {
+        let result = hauler.deliver_resource();
+        if let Some((resource, amount)) = result {}
     }
 }
 
@@ -73,19 +79,24 @@ impl StorageRead for Warehouse {
 }
 
 impl StorageInsert for Warehouse {
-    fn add_to_storage(&mut self, resource: GameResources, amount: i32) -> Option<i32> {
+    fn add_to_storage(
+        &mut self,
+        storage_manager: &mut ResMut<StorageManager>,
+        resource: GameResources,
+        amount: i32,
+    ) -> Option<i32> {
         let storage_data = self.get_storage_data_mut();
         if storage_data.get_storage_usage() < storage_data.max_capacity {
             let mut overflow: i32 = 0;
             let resulting_total = storage_data.get_storage_usage() + amount;
             if resulting_total <= storage_data.max_capacity {
                 *storage_data.storage.get_mut(&resource).unwrap() += amount;
-            // TODO: Call storage manager to update values
+                storage_manager.update_global_resource(resource, amount);
             } else {
                 overflow = (storage_data.storage.get(&resource).unwrap().clone() + amount)
                     - storage_data.max_capacity;
                 *storage_data.storage.get_mut(&resource).unwrap() += amount - overflow;
-                // TODO: Call storage manager to update values
+                storage_manager.update_global_resource(resource, amount - overflow);
             }
             return Some(overflow);
         } else {
@@ -95,19 +106,24 @@ impl StorageInsert for Warehouse {
 }
 
 impl StorageWithdraw for Warehouse {
-    fn remove_from_storage(&mut self, resource: GameResources, amount: i32) -> Option<i32> {
+    fn remove_from_storage(
+        &mut self,
+        storage_manager: &mut ResMut<StorageManager>,
+        resource: GameResources,
+        amount: i32,
+    ) -> Option<i32> {
         let storage_data = self.get_storage_data_mut();
         if storage_data.get_storage_usage() > 0 {
             let storage_has_resources: bool = storage_data.get_stored_amount(resource) >= amount;
             if storage_has_resources {
                 *storage_data.storage.get_mut(&resource).unwrap() -= amount;
                 *storage_data.reserved_storage.get_mut(&resource).unwrap() -= amount;
-                // TODO: Call storage manager to update values
+                storage_manager.update_global_resource(resource, -amount);
                 return Some(0);
             } else {
                 let remaining_resources = storage_data.storage.get(&resource).unwrap().clone();
                 *storage_data.storage.get_mut(&resource).unwrap() = 0;
-                // TODO: Call storage manager to update values
+                storage_manager.update_global_resource(resource, -remaining_resources);
                 let amount_not_removed = amount - remaining_resources;
                 return Some(amount_not_removed);
             }
@@ -138,6 +154,53 @@ impl ResourceReservation for Warehouse {
             return true;
         } else {
             return false;
+        }
+    }
+}
+
+pub fn sys_warehouse_sensors(
+    events: ResMut<EventQueue>,
+    mut storage_manager: ResMut<StorageManager>,
+    mut collider_set: ResMut<ColliderSet>,
+    mut query: Query<&mut Warehouse>,
+    mut query2: Query<&mut Hauler>,
+) {
+    while let Ok(proximity_event) = events.proximity_events.pop() {
+        let mut warehouse: Option<Mut<Warehouse>> = None;
+        let mut hauler: Option<Mut<Hauler>> = None;
+        let (entity1, entity2) =
+            get_entities_from_proximity_event(proximity_event, &mut collider_set);
+        if let Ok(warehouse_result) = query.get_mut(Entity::from_bits(entity1)) {
+            match warehouse {
+                None => warehouse = Some(warehouse_result),
+                _ => (),
+            }
+        }
+        if let Ok(warehouse_result) = query.get_mut(Entity::from_bits(entity2)) {
+            match warehouse {
+                None => warehouse = Some(warehouse_result),
+                _ => (),
+            }
+        }
+        if let Ok(hauler_result) = query2.get_mut(Entity::from_bits(entity1)) {
+            match hauler {
+                None => hauler = Some(hauler_result),
+                _ => (),
+            }
+        }
+        if let Ok(hauler_result) = query2.get_mut(Entity::from_bits(entity2)) {
+            match hauler {
+                None => hauler = Some(hauler_result),
+                _ => (),
+            }
+        }
+
+        if !hauler.is_none() && !warehouse.is_none() {
+            warehouse.unwrap().on_proximity_event(
+                &mut storage_manager,
+                proximity_event.new_status,
+                &mut hauler.unwrap(),
+            );
         }
     }
 }

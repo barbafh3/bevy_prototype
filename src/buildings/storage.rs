@@ -1,4 +1,6 @@
-use crate::constants::enums::GameResources;
+use bevy::ecs::ResMut;
+
+use crate::{constants::enums::GameResources, managers::storage::StorageManager};
 use std::collections::HashMap;
 
 pub struct StorageData {
@@ -19,11 +21,21 @@ pub trait StorageDataRead {
 }
 
 pub trait StorageInsert {
-    fn add_to_storage(&mut self, resource: GameResources, amount: i32) -> Option<i32>;
+    fn add_to_storage(
+        &mut self,
+        storage_manager: &mut ResMut<StorageManager>,
+        resource: GameResources,
+        amount: i32,
+    ) -> Option<i32>;
 }
 
 pub trait StorageWithdraw {
-    fn remove_from_storage(&mut self, resource: GameResources, amount: i32) -> Option<i32>;
+    fn remove_from_storage(
+        &mut self,
+        storage_manager: &mut ResMut<StorageManager>,
+        resource: GameResources,
+        amount: i32,
+    ) -> Option<i32>;
 }
 
 pub trait ResourceReservation {
