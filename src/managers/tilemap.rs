@@ -80,6 +80,8 @@ pub fn build_tilemap(
     let pixel_width = map.dimensions().x() * WorldChunk::<WorldTile>::WIDTH;
     let pixel_height = map.dimensions().y() * WorldChunk::<WorldTile>::HEIGHT;
 
+    println!("Tilemap dimensions - x: {} y:{}", pixel_width, pixel_height);
+
     for x in 0..map.dimensions().x() as i32 {
         for y in 0..map.dimensions().y() as i32 {
             let coordinates = Vec2::new(x as f32, y as f32);

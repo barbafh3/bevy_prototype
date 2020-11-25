@@ -7,7 +7,12 @@ use bevy::{
     ecs::{Local, Res},
     prelude::{EventReader, Events, ResMut},
 };
-use std::collections::HashMap;
+use lazy_static::lazy_static;
+use std::{collections::HashMap, sync::Mutex};
+
+lazy_static! {
+    pub static ref TASK_MANAGER: Mutex<TaskManager> = Mutex::new(TaskManager::new());
+}
 
 pub trait TaskAction {
     fn run_task(&mut self, delta: f32, event: &mut ResMut<Events<TaskFinished>>);
@@ -46,11 +51,8 @@ impl TaskManager {
     }
 }
 
-pub fn sys_run_tasks(
-    time: Res<Time>,
-    mut task_manager: ResMut<TaskManager>,
-    mut event: ResMut<Events<TaskFinished>>,
-) {
+pub fn sys_run_tasks(time: Res<Time>, mut event: ResMut<Events<TaskFinished>>) {
+    let task_manager = &mut TASK_MANAGER.lock().unwrap();
     if task_manager.tasks.len() > 0 {
         for (_, task) in task_manager.tasks.iter_mut() {
             task.run_task(time.delta_seconds, &mut event);
@@ -59,10 +61,10 @@ pub fn sys_run_tasks(
 }
 
 pub fn sys_task_finished(
-    mut task_manager: ResMut<TaskManager>,
     mut event_reader: Local<EventReader<TaskFinished>>,
     task_finished_events: Res<Events<TaskFinished>>,
 ) {
+    let task_manager = &mut TASK_MANAGER.lock().unwrap();
     for task_finished in event_reader.iter(&task_finished_events) {
         println!("Task list lenght: {}", task_manager.tasks.len());
         let mut task = task_manager

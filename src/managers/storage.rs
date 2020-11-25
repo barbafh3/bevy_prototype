@@ -1,5 +1,10 @@
 use crate::constants::enums::GameResources;
-use std::collections::HashMap;
+use lazy_static::lazy_static;
+use std::{collections::HashMap, sync::Mutex};
+
+lazy_static! {
+    pub static ref STORAGE_MANAGER: Mutex<StorageManager> = Mutex::new(StorageManager::new());
+}
 
 pub struct StorageManager {
     global_storage: HashMap<GameResources, i32>,
@@ -11,7 +16,7 @@ impl StorageManager {
         global_storage.insert(GameResources::Wood, 0);
         global_storage.insert(GameResources::Stone, 0);
         global_storage.insert(GameResources::Plank, 0);
-        global_storage.insert(GameResources::StonBrick, 0);
+        global_storage.insert(GameResources::StoneBrick, 0);
         StorageManager { global_storage }
     }
 

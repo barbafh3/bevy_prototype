@@ -1,6 +1,9 @@
-use bevy::{ecs::ResMut, prelude::Events};
+use bevy::{
+    ecs::{Entity, ResMut},
+    prelude::Events,
+};
 
-use crate::constants::enums::Tasks;
+use crate::constants::enums::{GameResources, Tasks};
 
 use super::{TaskAction, TaskFinished};
 
@@ -11,13 +14,13 @@ pub struct Haul {
     weight: f32,
     timer: f32,
     // has_loaded: bool,
-    // total_resource_amount: i32,
-    // resource_type: ConstructionResources,
-    // resource_requester: Entity,
-    // resource_origin: Entity,
-    // required_haulers: i32,
-    // working_haulers: i32,
-    // hauler_list: Vec<Entity>
+    total_resource_amount: i32,
+    resource_type: GameResources,
+    resource_requester: Entity,
+    resource_origin: Option<Entity>,
+    required_haulers: i32,
+    working_haulers: i32,
+    hauler_list: Vec<Entity>,
 }
 
 impl Drop for Haul {
@@ -48,12 +51,26 @@ impl TaskAction for Haul {
 }
 
 impl Haul {
-    pub fn new(priority: f32, weight: f32) -> Haul {
+    pub fn new(
+        priority: f32,
+        weight: f32,
+        resource_type: GameResources,
+        total_resource_amount: i32,
+        resource_requester: Entity,
+        resource_origin: Option<Entity>,
+    ) -> Haul {
         Haul {
             task_index: 0,
             priority,
             weight,
             timer: 3.0,
+            resource_type,
+            total_resource_amount,
+            resource_requester,
+            resource_origin,
+            required_haulers: 0,
+            working_haulers: 0,
+            hauler_list: vec![],
         }
     }
 }

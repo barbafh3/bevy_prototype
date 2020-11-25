@@ -5,7 +5,7 @@ pub enum GameResources {
     Wood,
     Stone,
     Plank,
-    StonBrick,
+    StoneBrick,
 }
 
 #[derive(Debug, Display)]

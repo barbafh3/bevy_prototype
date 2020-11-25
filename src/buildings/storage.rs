@@ -3,6 +3,7 @@ use bevy::ecs::ResMut;
 use crate::{constants::enums::GameResources, managers::storage::StorageManager};
 use std::collections::HashMap;
 
+#[derive(Clone)]
 pub struct StorageData {
     pub max_capacity: i32,
     pub storage: HashMap<GameResources, i32>,

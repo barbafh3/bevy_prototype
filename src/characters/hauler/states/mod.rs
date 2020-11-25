@@ -9,6 +9,7 @@ use bevy_rapier2d::{physics::RigidBodyHandleComponent, rapier::dynamics::RigidBo
 
 pub mod idle;
 
+#[derive(Eq, PartialEq, Copy, Clone)]
 pub enum HaulerStates {
     Idle,
     Loading,
@@ -20,11 +21,11 @@ pub fn sys_run_hauler_state(
     mut rb_set: ResMut<RigidBodySet>,
     mut query: Query<(&mut Hauler, &Transform, &mut RigidBodyHandleComponent)>,
 ) {
-    for (hauler, transform, rb_handle) in query.iter_mut() {
+    for (mut hauler, transform, rb_handle) in query.iter_mut() {
         match hauler.state {
             HaulerStates::Idle => state_hauler_idle(
                 time.delta_seconds,
-                hauler,
+                &mut hauler,
                 transform,
                 &mut rb_set,
                 rb_handle,

@@ -32,7 +32,7 @@ pub fn state_placing_warehouse(
         current_building.entity = None;
     }
     if mouse_input.just_released(MouseButton::Left) {
-        warehouse.state = WarehouseStates::Construction;
+        warehouse.state = WarehouseStates::Loading;
         current_building.entity = None;
     }
 }

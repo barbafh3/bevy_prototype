@@ -6,6 +6,8 @@ mod constants;
 mod managers;
 mod utils;
 
+use std::collections::HashMap;
+
 use bevy::prelude::*;
 use bevy_rapier2d::{
     na::Vector2,
@@ -20,6 +22,7 @@ use bevy_tilemap::{
     ChunkTilesPlugin,
 };
 use buildings::{
+    stockpile::{sys_stockpile_sensors, Stockpile},
     sys_spawn_building,
     warehouse::{states::sys_run_warehouse_states, sys_warehouse_sensors},
     CurrentBuilding,
@@ -29,6 +32,7 @@ use characters::{
     hauler::{states::sys_run_hauler_state, Hauler},
     player::{states::run_player_state, sys_player_input},
 };
+use constants::enums::GameResources;
 use managers::{
     storage::StorageManager,
     tasks::{sys_run_tasks, sys_task_finished, TaskFinished, TaskManager},
@@ -49,7 +53,7 @@ fn startup(
 ) {
     rapier_config.gravity = Vector2::new(0.0, 0.0);
     tile_sprite_handles.handles = asset_server.load_folder("textures").unwrap();
-    map.set_dimensions(Vec2::new(1.0, 1.0));
+    map.set_dimensions(Vec2::new(3.0, 3.0));
 
     let camera = Camera2dComponents::default();
     let e = commands.spawn(camera).current_entity().unwrap();
@@ -65,35 +69,20 @@ fn startup(
 
     commands.spawn(UiCameraComponents::default());
 
-    // let player_texture = asset_server.load("archer.png");
-    // let player = commands
-    //     .spawn(SpriteComponents {
-    //         material: materials.add(player_texture.into()),
-    //         transform: Transform::from_translation(Vec3::new(0.0, 100.0, 100.0)),
-    //         sprite: Sprite::new(Vec2::new(16.0, 16.0)),
-    //         ..Default::default()
-    //     })
-    //     .with(Player {
-    //         state: PlayerStates::Run,
-    //         speed: 100.0,
-    //         base_movement_tick: 3.0,
-    //         movement_tick: 3.0,
-    //         movement_radius: 50.0,
-    //         movement_target: default_idle_point(),
-    //     })
-    //     .current_entity()
-    //     .unwrap();
-    // let rigid_body = RigidBodyBuilder::new_dynamic()
-    //     .translation(0.0, 100.0)
-    //     .can_sleep(false);
-    // let collider = ColliderBuilder::ball(10.0).user_data(player.to_bits() as u128);
-    // commands.insert(player, (rigid_body, collider));
+    let idle_point_texture = asset_server.load("flag.png");
+    let idle_point = get_idle_point();
+    commands.spawn(SpriteComponents {
+        material: materials.add(idle_point_texture.into()),
+        transform: Transform::from_translation(Vec3::new(idle_point.x(), idle_point.y(), 100.0)),
+        sprite: Sprite::new(Vec2::new(16.0, 16.0) * 2.0),
+        ..Default::default()
+    });
 
     let hauler_texture = asset_server.load("horse.png");
     let hauler = commands
         .spawn(SpriteComponents {
             material: materials.add(hauler_texture.into()),
-            transform: Transform::from_translation(Vec3::new(-100.0, 100.0, 100.0)),
+            transform: Transform::from_translation(Vec3::new(-100.0, 100.0, 101.0)),
             sprite: Sprite::new(Vec2::new(16.0, 16.0)),
             ..Default::default()
         })
@@ -105,6 +94,35 @@ fn startup(
         .can_sleep(false);
     let collider = ColliderBuilder::ball(10.0).user_data(hauler.to_bits() as u128);
     commands.insert(hauler, (rigid_body, collider));
+
+    let stockpile_texture = asset_server.load("stockpile.png");
+    let mut storage: HashMap<GameResources, i32> = HashMap::new();
+    storage.insert(GameResources::Wood, 100);
+    storage.insert(GameResources::Stone, 0);
+    storage.insert(GameResources::Plank, 0);
+    storage.insert(GameResources::StoneBrick, 0);
+    let reserved_storage = HashMap::new();
+    let incoming_resources = reserved_storage.clone();
+    let stockpile = commands
+        .spawn(SpriteComponents {
+            material: materials.add(stockpile_texture.into()),
+            transform: Transform::from_translation(Vec3::new(0.0, 0.0, 100.0)),
+            sprite: Sprite::new(Vec2::new(16.0, 16.0) * 2.0),
+            ..Default::default()
+        })
+        .with(Stockpile::new(
+            1000,
+            storage.clone(),
+            reserved_storage.clone(),
+            incoming_resources.clone(),
+        ))
+        .current_entity()
+        .unwrap();
+    let rigid_body2 = RigidBodyBuilder::new_dynamic().can_sleep(false);
+    let collider2 = ColliderBuilder::cuboid(5.0, 5.0)
+        .sensor(true)
+        .user_data(stockpile.to_bits() as u128);
+    commands.insert(stockpile, (rigid_body2, collider2));
 
     // let rigid_body1 = RigidBodyBuilder::new_static();
     // let collider1 = ColliderBuilder::cuboid(1000.0, 1.0);
@@ -153,7 +171,7 @@ fn load_startup_systems(app: &mut AppBuilder) {
 fn load_systems(app: &mut AppBuilder) {
     core_systems(app);
     tilemap_systems(app);
-    warehouse_systems(app);
+    building_systems(app);
     player_systems(app);
     villager_systems(app);
     app.add_system(sys_run_tasks.system());
@@ -162,7 +180,6 @@ fn load_systems(app: &mut AppBuilder) {
 fn core_systems(app: &mut AppBuilder) {
     app.add_system(sys_spawn_building.system())
         .add_system(lock_rigidbody_rotation.system())
-        .add_system(sys_warehouse_sensors.system())
         .add_system(sys_task_finished.system())
         .add_system(sys_cursor_position.system());
 }
@@ -172,8 +189,10 @@ fn tilemap_systems(app: &mut AppBuilder) {
         .add_system(build_tilemap.system());
 }
 
-fn warehouse_systems(app: &mut AppBuilder) {
-    app.add_system(sys_run_warehouse_states.system());
+fn building_systems(app: &mut AppBuilder) {
+    app.add_system(sys_run_warehouse_states.system())
+        .add_system(sys_warehouse_sensors.system())
+        .add_system(sys_stockpile_sensors.system());
 }
 
 fn player_systems(app: &mut AppBuilder) {
