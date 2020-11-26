@@ -1,7 +1,13 @@
 pub mod states;
 
+use self::states::HaulerStates;
+use super::{get_new_position, normalize, run_movement_tick, IdleMovement};
+use crate::{
+    constants::{enums::GameResources, enums::Jobs},
+    get_idle_point,
+};
 use bevy::{
-    ecs::{Mut, ResMut},
+    ecs::{Entity, Mut, ResMut},
     math::Vec3,
     prelude::Transform,
 };
@@ -9,17 +15,14 @@ use bevy_rapier2d::{
     na::Vector2, physics::RigidBodyHandleComponent, rapier::dynamics::RigidBodySet,
 };
 
-use self::states::HaulerStates;
-use crate::{
-    constants::{enums::GameResources, enums::Jobs},
-    get_idle_point,
-};
+pub struct HaulerFinished {
+    task: Entity,
+    hauler: Entity,
+    amount_delivered: i32,
+}
 
-use super::{get_new_position, normalize, run_movement_tick, IdleMovement};
-
-#[derive(Copy, Clone)]
+#[derive(Copy, Clone, PartialEq)]
 pub struct Hauler {
-    pub villager_index: i32,
     villager_type: Jobs,
     pub state: HaulerStates,
     pub speed: f32,
@@ -28,14 +31,16 @@ pub struct Hauler {
     pub movement_radius: f32,
     pub movement_target: Vec3,
     pub capacity: i32,
+    pub current_haul: Option<Entity>,
     pub amount_requested: i32,
     pub current_resource: Option<GameResources>,
+    pub resource_origin: Option<Entity>,
+    pub resource_destination: Option<Entity>,
 }
 
 impl Hauler {
     pub fn new(speed: f32, base_movement_tick: f32, movement_radius: f32) -> Hauler {
         Hauler {
-            villager_index: 0,
             villager_type: Jobs::Hauler,
             state: HaulerStates::Idle,
             speed: speed,
@@ -44,8 +49,11 @@ impl Hauler {
             movement_radius,
             movement_target: Vec3::new(0.0, 0.0, 0.0),
             capacity: 0,
+            current_haul: None,
             amount_requested: 0,
             current_resource: None,
+            resource_origin: None,
+            resource_destination: None,
         }
     }
 
@@ -96,21 +104,3 @@ impl IdleMovement for Hauler {
         }
     }
 }
-
-// impl IndexedVillager for Hauler {
-//     fn get_villager_index(&self) -> i32 {
-//         self.villager_index.clone()
-//     }
-//     fn set_villager_index(&mut self, index: i32) {
-//         self.villager_index = index;
-//     }
-//     fn get_villager_type(&self) -> Jobs {
-//         self.villager_type.clone()
-//     }
-//     fn is_idle(&self) -> bool {
-//         self.is_idle
-//     }
-//     fn set_status(&mut self, status: bool) {
-//         self.is_idle = status;
-//     }
-// }

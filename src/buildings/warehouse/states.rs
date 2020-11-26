@@ -1,14 +1,14 @@
-pub mod construction_state;
-pub mod idle_state;
-pub mod loading_state;
-pub mod placing_state;
+pub mod construction;
+pub mod idle;
+pub mod loading;
+pub mod placing;
 
 use self::{
-    construction_state::state_warehouse_construction, idle_state::state_warehouse_idle,
-    loading_state::state_warehouse_loading, placing_state::state_placing_warehouse,
+    construction::state_warehouse_construction, idle::state_warehouse_idle,
+    loading::state_warehouse_loading, placing::state_placing_warehouse,
 };
 use super::Warehouse;
-use crate::{buildings::CurrentBuilding, camera::CameraData, managers::tasks::TaskManager};
+use crate::{buildings::CurrentBuilding, camera::CameraData};
 use bevy::{
     core::Time,
     ecs::Commands,
@@ -35,7 +35,6 @@ pub enum WarehouseStates {
 pub fn sys_run_warehouse_states(
     mut commands: Commands,
     time: Res<Time>,
-    mut task_manager: ResMut<TaskManager>,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     camera_data: Res<CameraData>,
@@ -66,9 +65,7 @@ pub fn sys_run_warehouse_states(
             WarehouseStates::Idle => {
                 state_warehouse_idle(&asset_server, &mut materials, warehouse, material)
             }
-            WarehouseStates::Loading => {
-                state_warehouse_loading(&mut task_manager, warehouse, &entity)
-            }
+            WarehouseStates::Loading => state_warehouse_loading(&mut commands, warehouse, &entity),
         }
     }
 }

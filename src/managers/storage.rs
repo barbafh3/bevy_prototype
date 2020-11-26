@@ -1,30 +1,35 @@
 use crate::constants::enums::GameResources;
-use lazy_static::lazy_static;
-use std::{collections::HashMap, sync::Mutex};
+use std::collections::HashMap;
 
-lazy_static! {
-    pub static ref STORAGE_MANAGER: Mutex<StorageManager> = Mutex::new(StorageManager::new());
+pub struct GlobalStorage {
+    pub list: HashMap<GameResources, i32>,
 }
 
-pub struct StorageManager {
-    global_storage: HashMap<GameResources, i32>,
-}
-
-impl StorageManager {
-    pub fn new() -> StorageManager {
-        let mut global_storage = HashMap::new();
-        global_storage.insert(GameResources::Wood, 0);
-        global_storage.insert(GameResources::Stone, 0);
-        global_storage.insert(GameResources::Plank, 0);
-        global_storage.insert(GameResources::StoneBrick, 0);
-        StorageManager { global_storage }
+impl GlobalStorage {
+    pub fn new() -> Self {
+        GlobalStorage {
+            list: HashMap::new(),
+        }
     }
 
-    pub fn get_global_stored(&mut self, resource: GameResources) -> i32 {
-        return self.global_storage.get(&resource).unwrap().clone();
+    pub fn update_global_storage(&mut self, resource: GameResources, amount: i32) {
+        let global_resource = self.list.get(&resource);
+        match global_resource {
+            Some(_global_amount) => *self.list.get_mut(&resource).unwrap() += amount,
+            None => {
+                self.list.insert(resource, amount.clone());
+            }
+        }
     }
 
-    pub fn update_global_resource(&mut self, resource: GameResources, amount: i32) {
-        *self.global_storage.get_mut(&resource).unwrap() += amount;
+    pub fn get_global_resouce_amount(&mut self, resource: GameResources) -> i32 {
+        let global_resource = self.list.get(&resource);
+        match global_resource {
+            Some(global_amount) => global_amount.clone(),
+            None => {
+                self.list.insert(resource, 0);
+                return 0;
+            }
+        }
     }
 }

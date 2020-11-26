@@ -22,7 +22,7 @@ use bevy_tilemap::{
     ChunkTilesPlugin,
 };
 use buildings::{
-    stockpile::{sys_stockpile_sensors, Stockpile},
+    stockpile::Stockpile,
     sys_spawn_building,
     warehouse::{states::sys_run_warehouse_states, sys_warehouse_sensors},
     CurrentBuilding,
@@ -34,8 +34,11 @@ use characters::{
 };
 use constants::enums::GameResources;
 use managers::{
-    storage::StorageManager,
-    tasks::{sys_run_tasks, sys_task_finished, TaskFinished, TaskManager},
+    storage::GlobalStorage,
+    tasks::{
+        haul::{sys_close_haul_tasks, sys_run_haul_tasks},
+        TaskFinished,
+    },
     tilemap::{build_tilemap, load_atlas, MapState, TileSpriteHandles, WorldTile},
     villagers::sys_new_villager_requests,
     villagers::IdleVillager,
@@ -160,8 +163,7 @@ fn load_plugins(app: &mut AppBuilder) {
 }
 
 fn load_resources(app: &mut AppBuilder) {
-    app.add_resource(TaskManager::new())
-        .add_resource(StorageManager::new())
+    app.add_resource(GlobalStorage::new())
         .add_resource(RigidBodyRotationState { is_locked: false })
         .init_resource::<TileSpriteHandles>()
         .init_resource::<MapState>();
@@ -177,14 +179,17 @@ fn load_systems(app: &mut AppBuilder) {
     building_systems(app);
     player_systems(app);
     villager_systems(app);
-    app.add_system(sys_run_tasks.system());
 }
 
 fn core_systems(app: &mut AppBuilder) {
     app.add_system(sys_spawn_building.system())
         .add_system(lock_rigidbody_rotation.system())
-        .add_system(sys_task_finished.system())
         .add_system(sys_cursor_position.system());
+}
+
+fn task_systems(app: &mut AppBuilder) {
+    app.add_system(sys_run_haul_tasks.system())
+        .add_system(sys_close_haul_tasks.system());
 }
 
 fn tilemap_systems(app: &mut AppBuilder) {
@@ -194,8 +199,8 @@ fn tilemap_systems(app: &mut AppBuilder) {
 
 fn building_systems(app: &mut AppBuilder) {
     app.add_system(sys_run_warehouse_states.system())
-        .add_system(sys_warehouse_sensors.system())
-        .add_system(sys_stockpile_sensors.system());
+        // .add_system(sys_stockpile_sensors.system())
+        .add_system(sys_warehouse_sensors.system());
 }
 
 fn player_systems(app: &mut AppBuilder) {

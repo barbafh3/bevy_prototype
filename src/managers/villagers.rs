@@ -1,8 +1,7 @@
-#![feature(type_name_of_val)]
+use crate::{characters::hauler::Hauler, constants::enums::Jobs};
 use bevy::{
     ecs::Local,
-    ecs::Query,
-    ecs::{Commands, Entity, Res, ResMut},
+    ecs::{Commands, Res, ResMut},
     math::{Vec2, Vec3},
     prelude::EventReader,
     prelude::Events,
@@ -11,10 +10,6 @@ use bevy::{
     sprite::Sprite,
 };
 use bevy_rapier2d::rapier::{dynamics::RigidBodyBuilder, geometry::ColliderBuilder};
-
-use crate::{characters::hauler::Hauler, constants::enums::Jobs};
-
-use super::tasks::TaskManager;
 
 pub struct SpawnRequest {
     job: Jobs,
@@ -42,21 +37,13 @@ pub fn sys_new_villager_requests(
     }
 }
 
-pub fn sys_idle_villager_listing(
-    mut task_manager: ResMut<TaskManager>,
-    query: Query<(Entity, &IdleVillager)>,
-) {
-    let idle_villager_list = query.iter().map(|(entity, _)| entity).collect();
-    task_manager.push_idle_list(idle_villager_list);
-}
-
 pub fn spawn_villager(
     commands: &mut Commands,
     asset_server: &Res<AssetServer>,
     materials: &mut ResMut<Assets<ColorMaterial>>,
     villager_type: Jobs,
     position: Vec3,
-) -> Option<Entity> {
+) {
     match villager_type {
         Jobs::Hauler => {
             let hauler_texture = asset_server.load("horse.png");
@@ -75,10 +62,11 @@ pub fn spawn_villager(
                 .can_sleep(false);
             let collider = ColliderBuilder::ball(10.0).user_data(hauler.to_bits() as u128);
             commands.insert(hauler, (rigid_body, collider));
-            let new_hauler_entity = commands.current_entity().unwrap();
-            return Some(new_hauler_entity);
         }
-        _ => None,
+        Jobs::Villager => {}
+        Jobs::Builder => {}
+        Jobs::Carpenter => {}
+        Jobs::Woodcutter => {}
     }
 }
 

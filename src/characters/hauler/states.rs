@@ -1,10 +1,12 @@
+pub mod carrying;
 pub mod idle;
 pub mod loading;
 
-use crate::managers::villagers::IdleVillager;
-
-use self::{idle::state_hauler_idle, loading::state_hauler_loading};
+use self::{
+    carrying::state_hauler_carrying, idle::state_hauler_idle, loading::state_hauler_loading,
+};
 use super::Hauler;
+use crate::managers::villagers::IdleVillager;
 use bevy::{
     core::Time,
     ecs::{Commands, Entity, Query, Res, ResMut},
@@ -46,7 +48,7 @@ pub fn sys_run_hauler_state(
                 commands.remove_one::<IdleVillager>(entity);
                 state_hauler_loading();
             }
-            _ => (),
+            HaulerStates::Carrying => state_hauler_carrying(),
         }
     }
 }
