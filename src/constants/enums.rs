@@ -1,6 +1,6 @@
 use strum_macros::*;
 
-#[derive(Debug, Display, Hash, Eq, PartialEq, Clone, Copy, EnumIter)]
+#[derive(Debug, Display, Hash, Eq, PartialEq, Clone, Copy)]
 pub enum GameResources {
     Wood,
     Stone,
@@ -8,8 +8,9 @@ pub enum GameResources {
     StoneBrick,
 }
 
-#[derive(Debug, Display)]
+#[derive(Debug, Display, Clone, Copy, Eq, PartialEq)]
 pub enum Jobs {
+    Villager,
     Hauler,
     Builder,
     Carpenter,

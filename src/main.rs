@@ -37,6 +37,8 @@ use managers::{
     storage::StorageManager,
     tasks::{sys_run_tasks, sys_task_finished, TaskFinished, TaskManager},
     tilemap::{build_tilemap, load_atlas, MapState, TileSpriteHandles, WorldTile},
+    villagers::sys_new_villager_requests,
+    villagers::IdleVillager,
 };
 
 pub struct RigidBodyRotationState {
@@ -87,6 +89,7 @@ fn startup(
             ..Default::default()
         })
         .with(Hauler::new(50.0, 3.0, 20.0))
+        .with(IdleVillager)
         .current_entity()
         .unwrap();
     let rigid_body = RigidBodyBuilder::new_dynamic()
@@ -201,7 +204,8 @@ fn player_systems(app: &mut AppBuilder) {
 }
 
 fn villager_systems(app: &mut AppBuilder) {
-    app.add_system(sys_run_hauler_state.system());
+    app.add_system(sys_run_hauler_state.system())
+        .add_system(sys_new_villager_requests.system());
 }
 
 pub fn get_idle_point() -> Vec2 {

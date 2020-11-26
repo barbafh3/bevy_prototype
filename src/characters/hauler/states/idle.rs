@@ -1,16 +1,9 @@
-use crate::{
-    characters::{hauler::Hauler, IdleMovement},
-    get_idle_point,
-};
+use crate::characters::{hauler::Hauler, IdleMovement};
 use bevy::{
     ecs::{Mut, ResMut},
-    math::Vec3,
     prelude::Transform,
 };
-use bevy_rapier2d::{
-    na::Vector2, physics::RigidBodyHandleComponent, rapier::dynamics::RigidBodySet,
-};
-use rand::prelude::*;
+use bevy_rapier2d::{physics::RigidBodyHandleComponent, rapier::dynamics::RigidBodySet};
 
 pub fn state_hauler_idle(
     delta: f32,

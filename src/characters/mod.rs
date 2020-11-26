@@ -1,5 +1,6 @@
 pub mod hauler;
 pub mod player;
+pub mod villager;
 
 use self::hauler::Hauler;
 use bevy::{

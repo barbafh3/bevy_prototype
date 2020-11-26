@@ -1,15 +1,16 @@
-use crate::{
-    buildings::warehouse::Warehouse,
-    managers::tasks::{haul::Haul, TASK_MANAGER},
-};
-use bevy::ecs::{Entity, Mut};
+use crate::{buildings::warehouse::Warehouse, managers::tasks::TaskManager};
+use bevy::ecs::{Entity, Mut, ResMut};
 
-pub fn state_warehouse_loading(mut warehouse: Mut<Warehouse>, entity: &Entity) {
+pub fn state_warehouse_loading(
+    task_manager: &mut ResMut<TaskManager>,
+    mut warehouse: Mut<Warehouse>,
+    entity: &Entity,
+) {
     // println!("Warehouse loading!");
     if has_finished_loading(&warehouse) {
         warehouse.state = super::WarehouseStates::Construction;
     } else {
-        // create_haul_tasks(&mut warehouse, entity);
+        // create_haul_tasks(task_manager, &mut warehouse, entity);
     }
 }
 
@@ -25,12 +26,16 @@ pub(crate) fn has_finished_loading(warehouse: &Mut<Warehouse>) -> bool {
     return finished_loading;
 }
 
-pub(crate) fn create_haul_tasks(warehouse: &mut Mut<Warehouse>, entity: &Entity) {
-    let task_manager = &mut TASK_MANAGER.lock().unwrap();
-    for (resource, amount) in warehouse.required_resources.iter() {
-        if *amount > 0 {
-            let haul = Haul::new(1.0, 1.0, resource.clone(), amount.clone(), *entity, None);
-            task_manager.register_task(haul);
-        }
-    }
+pub(crate) fn create_haul_tasks(
+    task_manager: &mut ResMut<TaskManager>,
+    warehouse: &mut Mut<Warehouse>,
+    entity: &Entity,
+) {
+    // let task_manager = &mut TASK_MANAGER.lock().unwrap();
+    // for (resource, amount) in warehouse.required_resources.iter() {
+    //     if *amount > 0 {
+    //         let haul = Haul::new(1.0, 1.0, resource.clone(), amount.clone(), *entity, None);
+    //         task_manager.register_task(haul);
+    //     }
+    // }
 }

@@ -4,15 +4,11 @@ pub mod haul;
 use crate::constants::enums::Tasks;
 use bevy::{
     core::Time,
-    ecs::{Local, Res},
+    ecs::{Entity, Local, Res},
     prelude::{EventReader, Events, ResMut},
 };
 use lazy_static::lazy_static;
 use std::{collections::HashMap, sync::Mutex};
-
-lazy_static! {
-    pub static ref TASK_MANAGER: Mutex<TaskManager> = Mutex::new(TaskManager::new());
-}
 
 pub trait TaskAction {
     fn run_task(&mut self, delta: f32, event: &mut ResMut<Events<TaskFinished>>);
@@ -27,12 +23,14 @@ pub struct TaskFinished {
 
 pub struct TaskManager {
     tasks: HashMap<i32, Box<dyn TaskAction + Send + Sync>>,
+    idle_villagers: Vec<Entity>,
 }
 
 impl TaskManager {
     pub fn new() -> TaskManager {
         TaskManager {
             tasks: HashMap::new(),
+            idle_villagers: vec![],
         }
     }
 
@@ -49,22 +47,27 @@ impl TaskManager {
             self.tasks.insert(task.get_task_index(), Box::new(task));
         }
     }
+
+    pub fn push_idle_list(&mut self, idle_list: Vec<Entity>) {
+        self.idle_villagers = idle_list;
+    }
 }
 
-pub fn sys_run_tasks(time: Res<Time>, mut event: ResMut<Events<TaskFinished>>) {
-    let task_manager = &mut TASK_MANAGER.lock().unwrap();
-    if task_manager.tasks.len() > 0 {
-        for (_, task) in task_manager.tasks.iter_mut() {
-            task.run_task(time.delta_seconds, &mut event);
-        }
+pub fn sys_run_tasks(
+    time: Res<Time>,
+    mut task_manager: ResMut<TaskManager>,
+    mut event: ResMut<Events<TaskFinished>>,
+) {
+    for (_, task) in task_manager.tasks.iter_mut() {
+        task.run_task(time.delta_seconds, &mut event);
     }
 }
 
 pub fn sys_task_finished(
+    mut task_manager: ResMut<TaskManager>,
     mut event_reader: Local<EventReader<TaskFinished>>,
     task_finished_events: Res<Events<TaskFinished>>,
 ) {
-    let task_manager = &mut TASK_MANAGER.lock().unwrap();
     for task_finished in event_reader.iter(&task_finished_events) {
         println!("Task list lenght: {}", task_manager.tasks.len());
         let mut task = task_manager

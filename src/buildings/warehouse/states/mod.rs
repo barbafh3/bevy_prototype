@@ -35,6 +35,7 @@ pub enum WarehouseStates {
 pub fn sys_run_warehouse_states(
     mut commands: Commands,
     time: Res<Time>,
+    mut task_manager: ResMut<TaskManager>,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     camera_data: Res<CameraData>,
@@ -65,7 +66,9 @@ pub fn sys_run_warehouse_states(
             WarehouseStates::Idle => {
                 state_warehouse_idle(&asset_server, &mut materials, warehouse, material)
             }
-            WarehouseStates::Loading => state_warehouse_loading(warehouse, &entity),
+            WarehouseStates::Loading => {
+                state_warehouse_loading(&mut task_manager, warehouse, &entity)
+            }
         }
     }
 }

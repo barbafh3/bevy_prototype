@@ -11,9 +11,8 @@ use bevy_rapier2d::{
 
 use self::states::HaulerStates;
 use crate::{
-    constants::{enums::GameResources, tasks::HAULER_CAPACITY},
+    constants::{enums::GameResources, enums::Jobs},
     get_idle_point,
-    managers::villagers::IndexedVillager,
 };
 
 use super::{get_new_position, normalize, run_movement_tick, IdleMovement};
@@ -21,6 +20,7 @@ use super::{get_new_position, normalize, run_movement_tick, IdleMovement};
 #[derive(Copy, Clone)]
 pub struct Hauler {
     pub villager_index: i32,
+    villager_type: Jobs,
     pub state: HaulerStates,
     pub speed: f32,
     pub base_movement_tick: f32,
@@ -30,13 +30,13 @@ pub struct Hauler {
     pub capacity: i32,
     pub amount_requested: i32,
     pub current_resource: Option<GameResources>,
-    is_idle: bool,
 }
 
 impl Hauler {
     pub fn new(speed: f32, base_movement_tick: f32, movement_radius: f32) -> Hauler {
         Hauler {
             villager_index: 0,
+            villager_type: Jobs::Hauler,
             state: HaulerStates::Idle,
             speed: speed,
             base_movement_tick,
@@ -46,7 +46,6 @@ impl Hauler {
             capacity: 0,
             amount_requested: 0,
             current_resource: None,
-            is_idle: false,
         }
     }
 
@@ -64,24 +63,6 @@ impl Hauler {
 
     pub fn take_resources(&mut self, amount: i32) {
         self.capacity = amount;
-    }
-}
-
-impl IndexedVillager for Hauler {
-    fn get_villager_index(&self) -> i32 {
-        self.villager_index.clone()
-    }
-
-    fn set_villager_index(&mut self, index: i32) {
-        self.villager_index = index;
-    }
-
-    fn is_idle(&self) -> bool {
-        self.is_idle
-    }
-
-    fn set_status(&mut self, status: bool) {
-        self.is_idle = status;
     }
 }
 
@@ -115,3 +96,21 @@ impl IdleMovement for Hauler {
         }
     }
 }
+
+// impl IndexedVillager for Hauler {
+//     fn get_villager_index(&self) -> i32 {
+//         self.villager_index.clone()
+//     }
+//     fn set_villager_index(&mut self, index: i32) {
+//         self.villager_index = index;
+//     }
+//     fn get_villager_type(&self) -> Jobs {
+//         self.villager_type.clone()
+//     }
+//     fn is_idle(&self) -> bool {
+//         self.is_idle
+//     }
+//     fn set_status(&mut self, status: bool) {
+//         self.is_idle = status;
+//     }
+// }

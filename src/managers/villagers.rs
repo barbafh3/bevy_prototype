@@ -1,77 +1,130 @@
 #![feature(type_name_of_val)]
-use lazy_static::lazy_static;
-use std::{collections::HashMap, sync::Mutex};
+use bevy::{
+    ecs::Local,
+    ecs::Query,
+    ecs::{Commands, Entity, Res, ResMut},
+    math::{Vec2, Vec3},
+    prelude::EventReader,
+    prelude::Events,
+    prelude::{AssetServer, Assets, SpriteComponents, Transform},
+    sprite::ColorMaterial,
+    sprite::Sprite,
+};
+use bevy_rapier2d::rapier::{dynamics::RigidBodyBuilder, geometry::ColliderBuilder};
 
-use crate::characters::hauler::Hauler;
+use crate::{characters::hauler::Hauler, constants::enums::Jobs};
 
-pub struct VillagerManager {
-    villagers: HashMap<i32, Box<dyn IndexedVillager + Send + Sync>>,
+use super::tasks::TaskManager;
+
+pub struct SpawnRequest {
+    job: Jobs,
+    position: Vec3,
 }
 
-lazy_static! {
-    pub static ref VILLAGER_MANAGER: Mutex<VillagerManager> = Mutex::new(VillagerManager::new());
-}
+#[derive(Default)]
+pub struct IdleVillager;
 
-impl VillagerManager {
-    pub fn new() -> VillagerManager {
-        VillagerManager {
-            villagers: HashMap::new(),
-        }
-    }
-
-    pub fn register_villager<T: IndexedVillager + 'static + Send + Sync>(
-        &mut self,
-        mut villager: T,
-    ) {
-        self.register_villager_recursive(villager);
-    }
-
-    fn register_villager_recursive<T: IndexedVillager + 'static + Send + Sync>(
-        &mut self,
-        mut villager: T,
-    ) {
-        let key = rand::random::<i32>().abs();
-        if self.villagers.contains_key(&key) {
-            self.register_villager_recursive(villager);
-        } else {
-            villager.set_villager_index(key);
-            self.villagers
-                .insert(villager.get_villager_index(), Box::new(villager));
-        }
-    }
-
-    // fn request_idle_villager<T: IndexedVillager + 'static + Send + Sync>(
-    //     &mut self,
-    //     villager_type: T,
-    // ) {
-    //     let selected_villager: Option<T> = None;
-    //     for (index, villager) in self.villagers.iter() {
-    //         let is_villager_type_equal =
-    //             type_of_villager(villager_type) == type_of_villager(*villager);
-    //         if is_villager_type_equal && villager.is_idle() {}
-    //     }
-    // }
-
-    fn request_idle_villager(&mut self, hauler: Hauler) {
-        let selected_villager: Option<Hauler> = None;
-        for (index, villager) in self.villagers.iter() {
-            let is_villager_type_equal = false;
-            if is_villager_type_equal && villager.is_idle() {}
-        }
+pub fn sys_new_villager_requests(
+    mut commands: Commands,
+    asset_server: Res<AssetServer>,
+    mut materials: ResMut<Assets<ColorMaterial>>,
+    mut spawn_request_reader: Local<EventReader<SpawnRequest>>,
+    spawn_request_event: Res<Events<SpawnRequest>>,
+) {
+    for spawn_event in spawn_request_reader.iter(&spawn_request_event) {
+        spawn_villager(
+            &mut commands,
+            &asset_server,
+            &mut materials,
+            spawn_event.job,
+            spawn_event.position,
+        );
     }
 }
 
-// fn unbox<T>(value: Box<T>) -> T {
-//     *value
+pub fn sys_idle_villager_listing(
+    mut task_manager: ResMut<TaskManager>,
+    query: Query<(Entity, &IdleVillager)>,
+) {
+    let idle_villager_list = query.iter().map(|(entity, _)| entity).collect();
+    task_manager.push_idle_list(idle_villager_list);
+}
+
+pub fn spawn_villager(
+    commands: &mut Commands,
+    asset_server: &Res<AssetServer>,
+    materials: &mut ResMut<Assets<ColorMaterial>>,
+    villager_type: Jobs,
+    position: Vec3,
+) -> Option<Entity> {
+    match villager_type {
+        Jobs::Hauler => {
+            let hauler_texture = asset_server.load("horse.png");
+            let hauler = commands
+                .spawn(SpriteComponents {
+                    material: materials.add(hauler_texture.into()),
+                    transform: Transform::from_translation(position),
+                    sprite: Sprite::new(Vec2::new(16.0, 16.0)),
+                    ..Default::default()
+                })
+                .with(Hauler::new(50.0, 3.0, 20.0))
+                .current_entity()
+                .unwrap();
+            let rigid_body = RigidBodyBuilder::new_dynamic()
+                .translation(0.0, 100.0)
+                .can_sleep(false);
+            let collider = ColliderBuilder::ball(10.0).user_data(hauler.to_bits() as u128);
+            commands.insert(hauler, (rigid_body, collider));
+            let new_hauler_entity = commands.current_entity().unwrap();
+            return Some(new_hauler_entity);
+        }
+        _ => None,
+    }
+}
+
+// pub struct VillagerManager {
+//     villagers: Vec<Entity>,
 // }
 
-// pub fn type_of_villager<T: Any>(_: T) -> &'static str {
-//     type_name()
+// lazy_static! {
+//     pub static ref VILLAGER_MANAGER: Mutex<VillagerManager> = Mutex::new(VillagerManager::new());
 // }
 
-pub trait IndexedVillager {
-    fn get_villager_index(&self) -> i32;
-    fn set_villager_index(&mut self, index: i32);
-    fn is_idle(&self) -> bool;
-    fn set_status(&mut self, idle: bool);
-}
+// impl VillagerManager {
+//     pub fn new() -> VillagerManager {
+//         VillagerManager { villagers: vec![] }
+//     }
+
+//     pub fn register_villager(&mut self, mut villager: Entity) {
+//         if !self.villagers.contains(&villager) {
+//             self.villagers.push(villager);
+//         }
+//     }
+
+//     pub fn request_new_villager(
+//         &mut self,
+//         commands: &mut Commands,
+//         asset_server: &Res<AssetServer>,
+//         materials: &mut ResMut<Assets<ColorMaterial>>,
+//         villager_type: Jobs,
+//         mut query_set: QuerySet<(Query<&mut Hauler>, Query<(&Villager, &Transform)>)>,
+//     ) {
+//         let mut selected_villager: Option<(&i32, &Box<dyn IndexedVillager + Send + Sync>)> = None;
+//         for villager_entity in self.villagers.iter() {
+//             if let (villager, transform) = query_set.q1().iter() {}
+//             // let is_villager_type_equal = villager.get_villager_type() == Jobs::Villager;
+//             // if is_villager_type_equal {
+//             //     let query: &Query<(&Villager, &Transform)> = query_set.q1();
+//             // }
+//         }
+//     }
+
+// }
+
+// pub trait IndexedVillager {
+//     fn get_villager_index(&self) -> i32;
+//     fn set_villager_index(&mut self, index: i32);
+//     fn get_villager_type(&self) -> Jobs;
+//     fn is_idle(&self) -> bool;
+//     fn set_status(&mut self, idle: bool);
+// }
