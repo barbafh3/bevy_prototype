@@ -38,8 +38,8 @@ pub(crate) fn create_haul_tasks(
     for (resource, amount) in warehouse.required_resources.iter() {
         if *amount > 0 {
             let haul: Haul = Haul::new(
-                1.0,
-                1.0,
+                // 1.0,
+                // 1.0,
                 resource.clone(),
                 amount.clone(),
                 *entity,

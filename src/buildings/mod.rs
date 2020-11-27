@@ -6,7 +6,10 @@ use std::collections::HashMap;
 
 use crate::constants::enums::GameResources;
 
-use self::warehouse::Warehouse;
+use self::{
+    storage::{Storage, StorageTypes},
+    warehouse::Warehouse,
+};
 use bevy::{
     ecs::Res,
     ecs::{Commands, Entity, ResMut},

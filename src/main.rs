@@ -177,6 +177,7 @@ fn load_systems(app: &mut AppBuilder) {
     core_systems(app);
     tilemap_systems(app);
     building_systems(app);
+    task_systems(app);
     player_systems(app);
     villager_systems(app);
 }

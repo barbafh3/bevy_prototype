@@ -6,7 +6,6 @@ use crate::{
     managers::villagers::IdleVillager,
 };
 use bevy::{
-    core::Time,
     ecs::Query,
     ecs::Res,
     ecs::{Commands, Local},
@@ -17,10 +16,8 @@ use bevy::{
 use std::collections::HashMap;
 
 pub struct Haul {
-    task_index: i32,
-    priority: f32,
-    weight: f32,
-    timer: f32,
+    // priority: f32,
+    // weight: f32,
     has_loaded: bool,
     total_resource_amount: i32,
     amount_reserved: i32,
@@ -34,8 +31,8 @@ pub struct Haul {
 
 impl Haul {
     pub fn new(
-        priority: f32,
-        weight: f32,
+        // priority: f32,
+        // weight: f32,
         resource_type: GameResources,
         total_resource_amount: i32,
         resource_requester: Entity,
@@ -43,11 +40,9 @@ impl Haul {
         hauler_list: HashMap<Entity, Hauler>,
     ) -> Haul {
         Haul {
-            task_index: 0,
-            priority,
-            weight,
+            // priority,
+            // weight,
             has_loaded: false,
-            timer: 3.0,
             resource_type,
             total_resource_amount,
             amount_reserved: 0,
@@ -125,7 +120,6 @@ impl Haul {
 }
 
 pub fn sys_run_haul_tasks(
-    time: Res<Time>,
     mut global_storage: ResMut<GlobalStorage>,
     mut events: ResMut<Events<TaskFinished>>,
     mut haul_query: Query<(Entity, &mut Haul)>,
@@ -135,7 +129,6 @@ pub fn sys_run_haul_tasks(
         run_haul(
             &mut haul,
             entity,
-            time.delta_seconds,
             &mut events,
             &mut global_storage,
             &mut idle_query,
@@ -156,7 +149,6 @@ pub fn sys_close_haul_tasks(
 fn run_haul(
     mut haul: &mut Haul,
     task_entity: Entity,
-    delta: f32,
     events: &mut ResMut<Events<TaskFinished>>,
     global_storage: &mut ResMut<GlobalStorage>,
     idle_query: &mut Query<(Entity, &IdleVillager, &mut Hauler)>,
@@ -202,7 +194,7 @@ fn activate_hauler(haul: &mut Haul, entity: &Entity, hauler: &mut Hauler) {
     hauler.current_resource = Some(haul.resource_type);
     hauler.resource_destination = Some(haul.resource_requester);
     match haul.resource_origin {
-        Some(origin) => hauler.resource_origin = haul.resource_origin,
+        Some(_origin) => hauler.resource_origin = haul.resource_origin,
         None => {
             // Gets a new origin for the resource (Warehouse, Stockpile, etc)
         }
@@ -214,5 +206,6 @@ fn activate_hauler(haul: &mut Haul, entity: &Entity, hauler: &mut Hauler) {
     }
     haul.amount_reserved += hauler.amount_requested;
     haul.required_haulers -= 1;
+    haul.working_haulers += 1;
     haul.hauler_list.remove(&entity);
 }

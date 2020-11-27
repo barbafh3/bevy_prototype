@@ -1,6 +1,15 @@
 use crate::constants::enums::GameResources;
 use std::collections::HashMap;
 
+pub struct Storage {
+    pub storage_type: StorageTypes,
+}
+
+pub enum StorageTypes {
+    Stockpile,
+    Warehouse,
+}
+
 #[derive(Clone)]
 pub struct StorageData {
     pub max_capacity: i32,
