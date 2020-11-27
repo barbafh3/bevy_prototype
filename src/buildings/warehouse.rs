@@ -1,16 +1,12 @@
 pub mod states;
 
 use self::states::WarehouseStates;
-use super::storage::*;
 use crate::{
     characters::hauler::states::HaulerStates, characters::hauler::Hauler,
     constants::enums::GameResources, managers::events::get_entities_from_proximity_event,
 };
 use bevy::ecs::{Entity, Query, ResMut};
-use bevy_rapier2d::{
-    physics::EventQueue,
-    rapier::geometry::{ColliderSet, Proximity},
-};
+use bevy_rapier2d::{physics::EventQueue, rapier::geometry::ColliderSet};
 use std::collections::HashMap;
 
 #[derive(Clone)]
@@ -20,71 +16,90 @@ pub struct Warehouse {
     pub construction_time: f32,
     pub warehouse_sprite_added: bool,
     pub is_position_set: bool,
-    storage_data: StorageData,
+    pub has_requested_resources: bool,
 }
 
 impl Warehouse {
-    pub fn new(max_capacity: i32, required_resources: HashMap<GameResources, i32>) -> Warehouse {
-        let mut storage: HashMap<GameResources, i32> = HashMap::new();
-        storage.insert(GameResources::Wood, 0);
-        storage.insert(GameResources::Stone, 0);
-        storage.insert(GameResources::Plank, 0);
-        storage.insert(GameResources::StoneBrick, 0);
+    pub fn new(required_resources: HashMap<GameResources, i32>) -> Warehouse {
         let warehouse = Warehouse {
             state: WarehouseStates::Placing,
             required_resources,
             construction_time: 10.0,
             warehouse_sprite_added: false,
             is_position_set: false,
-            storage_data: StorageData::new(
-                max_capacity,
-                storage.clone(),
-                storage.clone(),
-                storage.clone(),
-            ),
+            has_requested_resources: false,
         };
         return warehouse;
     }
 
-    pub fn on_proximity_event(
-        &mut self,
-        // storage_manager: &mut ResMut<StorageManager>,
-        event: Proximity,
-        hauler: &mut Hauler,
-    ) {
-        // match event {
-        //     Proximity::Intersecting => self.on_intersect(hauler, storage_manager),
-        //     _ => (),
-        // }
+    pub fn on_proximity_event(&mut self, hauler: &mut Hauler) {
+        self.on_intersect(hauler)
     }
 
-    fn on_intersect(
-        &mut self,
-        hauler: &mut Hauler,
-        // storage_manager: &mut ResMut<StorageManager>
-    ) {
+    fn on_intersect(&mut self, hauler: &mut Hauler) {
         println!("Warehouse: Hauler Intersect!");
         match hauler.state {
             HaulerStates::Carrying => {}
             HaulerStates::Loading => {}
             _ => (),
         }
-        // let result = hauler.deliver_resource();
-        // if let Some((resource, amount)) = result {
-        // self.add_to_storage(storage_manager, resource, amount);
-        // }
     }
 }
 
-impl StorageRead for Warehouse {
-    fn get_storage_data_mut(&mut self) -> &mut StorageData {
-        return &mut self.storage_data;
-    }
+pub fn sys_warehouse_sensors(
+    events: ResMut<EventQueue>,
+    mut collider_set: ResMut<ColliderSet>,
+    mut warehouse_query: Query<&mut Warehouse>,
+    mut hauler_query: Query<&mut Hauler>,
+) {
+    while let Ok(proximity_event) = events.proximity_events.pop() {
+        println!("WAREHOUSE EVENT!");
+        let mut warehouse: Option<Warehouse> = None;
+        let mut hauler: Option<Hauler> = None;
+        let (entity1, entity2) =
+            get_entities_from_proximity_event(proximity_event, &mut collider_set);
+        if let Ok(warehouse_result) = warehouse_query.get_mut(Entity::from_bits(entity1)) {
+            match warehouse {
+                None => warehouse = Some(warehouse_result.clone()),
+                _ => (),
+            }
+        }
+        if let Ok(warehouse_result) = warehouse_query.get_mut(Entity::from_bits(entity2)) {
+            match warehouse {
+                None => warehouse = Some(warehouse_result.clone()),
+                _ => (),
+            }
+        }
+        if let Ok(hauler_result) = hauler_query.get_mut(Entity::from_bits(entity1)) {
+            match hauler {
+                None => hauler = Some(*hauler_result),
+                _ => (),
+            }
+        }
+        if let Ok(hauler_result) = hauler_query.get_mut(Entity::from_bits(entity2)) {
+            match hauler {
+                None => hauler = Some(*hauler_result),
+                _ => (),
+            }
+        }
+        while let Ok(contact_event) = events.contact_events.pop() {
+            println!("Received contact event: {:?}", contact_event);
+        }
 
-    fn get_storage_data(&self) -> &StorageData {
-        return &self.storage_data;
+        if !hauler.is_none() && !warehouse.is_none() {
+            warehouse.unwrap().on_proximity_event(&mut hauler.unwrap());
+        }
     }
 }
+
+// impl StorageRead for Warehouse {
+//     fn get_storage_data_mut(&mut self) -> &mut StorageData {
+//         return &mut self.storage_data;
+//     }
+//     fn get_storage_data(&self) -> &StorageData {
+//         return &self.storage_data;
+//     }
+// }
 
 // impl StorageInsert for Warehouse {
 //     fn add_to_storage(
@@ -164,50 +179,3 @@ impl StorageRead for Warehouse {
 //         }
 //     }
 // }
-
-pub fn sys_warehouse_sensors(
-    events: ResMut<EventQueue>,
-    // mut storage_manager: ResMut<StorageManager>,
-    mut collider_set: ResMut<ColliderSet>,
-    mut warehouse_query: Query<&mut Warehouse>,
-    mut hauler_query: Query<&mut Hauler>,
-) {
-    while let Ok(proximity_event) = events.proximity_events.pop() {
-        let mut warehouse: Option<Warehouse> = None;
-        let mut hauler: Option<Hauler> = None;
-        let (entity1, entity2) =
-            get_entities_from_proximity_event(proximity_event, &mut collider_set);
-        if let Ok(warehouse_result) = warehouse_query.get_mut(Entity::from_bits(entity1)) {
-            match warehouse {
-                None => warehouse = Some(warehouse_result.clone()),
-                _ => (),
-            }
-        }
-        if let Ok(warehouse_result) = warehouse_query.get_mut(Entity::from_bits(entity2)) {
-            match warehouse {
-                None => warehouse = Some(warehouse_result.clone()),
-                _ => (),
-            }
-        }
-        if let Ok(hauler_result) = hauler_query.get_mut(Entity::from_bits(entity1)) {
-            match hauler {
-                None => hauler = Some(*hauler_result),
-                _ => (),
-            }
-        }
-        if let Ok(hauler_result) = hauler_query.get_mut(Entity::from_bits(entity2)) {
-            match hauler {
-                None => hauler = Some(*hauler_result),
-                _ => (),
-            }
-        }
-
-        if !hauler.is_none() && !warehouse.is_none() {
-            warehouse.unwrap().on_proximity_event(
-                // &mut storage_manager,
-                proximity_event.new_status,
-                &mut hauler.unwrap(),
-            );
-        }
-    }
-}

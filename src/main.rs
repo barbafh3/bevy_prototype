@@ -22,14 +22,19 @@ use bevy_tilemap::{
     ChunkTilesPlugin,
 };
 use buildings::{
+    stockpile::sys_stockpile_sensors,
+    stockpile::sys_update_stockpile_storage,
     stockpile::Stockpile,
+    storage::sys_storage_sensors,
+    storage::sys_update_storage_building,
+    storage::{StorageBuilding, StorageTypes},
     sys_spawn_building,
     warehouse::{states::sys_run_warehouse_states, sys_warehouse_sensors},
     CurrentBuilding,
 };
 use camera::{sys_cursor_position, CameraData, CustomCursorState};
 use characters::{
-    hauler::{states::sys_run_hauler_state, Hauler},
+    hauler::{states::sys_run_hauler_state, Hauler, HaulerFinished},
     player::{states::run_player_state, sys_player_input},
 };
 use constants::enums::GameResources;
@@ -42,6 +47,7 @@ use managers::{
     tilemap::{build_tilemap, load_atlas, MapState, TileSpriteHandles, WorldTile},
     villagers::sys_new_villager_requests,
     villagers::IdleVillager,
+    villagers::SpawnRequest,
 };
 
 pub struct RigidBodyRotationState {
@@ -87,7 +93,7 @@ fn startup(
     let hauler = commands
         .spawn(SpriteComponents {
             material: materials.add(hauler_texture.into()),
-            transform: Transform::from_translation(Vec3::new(-100.0, 100.0, 101.0)),
+            transform: Transform::from_translation(Vec3::new(-100.0, 100.0, 100.0)),
             sprite: Sprite::new(Vec2::new(16.0, 16.0)),
             ..Default::default()
         })
@@ -107,8 +113,6 @@ fn startup(
     storage.insert(GameResources::Stone, 0);
     storage.insert(GameResources::Plank, 0);
     storage.insert(GameResources::StoneBrick, 0);
-    let reserved_storage = HashMap::new();
-    let incoming_resources = reserved_storage.clone();
     let stockpile = commands
         .spawn(SpriteComponents {
             material: materials.add(stockpile_texture.into()),
@@ -116,12 +120,7 @@ fn startup(
             sprite: Sprite::new(Vec2::new(16.0, 16.0) * 2.0),
             ..Default::default()
         })
-        .with(Stockpile::new(
-            1000,
-            storage.clone(),
-            reserved_storage.clone(),
-            incoming_resources.clone(),
-        ))
+        .with(StorageBuilding::new(StorageTypes::Stockpile, 1000, storage))
         .current_entity()
         .unwrap();
     let rigid_body2 = RigidBodyBuilder::new_dynamic().can_sleep(false);
@@ -182,6 +181,12 @@ fn load_systems(app: &mut AppBuilder) {
     villager_systems(app);
 }
 
+fn load_events(app: &mut AppBuilder) {
+    app.add_event::<HaulerFinished>()
+        .add_event::<SpawnRequest>()
+        .add_event::<TaskFinished>();
+}
+
 fn core_systems(app: &mut AppBuilder) {
     app.add_system(sys_spawn_building.system())
         .add_system(lock_rigidbody_rotation.system())
@@ -200,7 +205,10 @@ fn tilemap_systems(app: &mut AppBuilder) {
 
 fn building_systems(app: &mut AppBuilder) {
     app.add_system(sys_run_warehouse_states.system())
-        // .add_system(sys_stockpile_sensors.system())
+        .add_system(sys_update_stockpile_storage.system())
+        .add_system(sys_stockpile_sensors.system())
+        .add_system(sys_storage_sensors.system())
+        .add_system(sys_update_storage_building.system())
         .add_system(sys_warehouse_sensors.system());
 }
 
@@ -220,7 +228,7 @@ pub fn get_idle_point() -> Vec2 {
 
 fn main() {
     let mut app = App::build();
-    app.add_event::<TaskFinished>();
+    load_events(&mut app);
     load_resources(&mut app);
     load_plugins(&mut app);
     load_startup_systems(&mut app);

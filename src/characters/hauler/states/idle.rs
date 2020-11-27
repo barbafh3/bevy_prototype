@@ -23,6 +23,7 @@ pub fn state_hauler_idle(
         hauler.is_idle = true;
     }
     if hauler.amount_requested > 0 {
+        println!("Hauler: State changed to Loading");
         hauler.state = super::HaulerStates::Loading;
     }
 }

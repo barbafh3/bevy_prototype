@@ -1,5 +1,5 @@
 [package]
-name = "observer_test"
+name = "bevy_prototype"
 version = "0.1.0"
 authors = ["barba"]
 edition = "2018"

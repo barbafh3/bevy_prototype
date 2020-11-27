@@ -4,6 +4,7 @@ use bevy_rapier2d::{
     rapier::geometry::{ColliderSet, Proximity},
 };
 
+use super::storage::*;
 use crate::{
     characters::hauler::states::HaulerStates,
     characters::hauler::Hauler,
@@ -13,40 +14,24 @@ use crate::{
 use std::collections::HashMap;
 
 #[derive(Clone)]
-pub struct StorageBuilding {
-    pub storage_type: StorageTypes,
-    pub storage_data: StorageData,
-    pub updated_on_startup: bool,
+pub struct Stockpile {
+    storage_data: StorageData,
 }
-
-#[derive(Clone)]
-pub enum StorageTypes {
-    Stockpile,
-    Warehouse,
-}
-
-impl StorageBuilding {
+impl Stockpile {
     pub fn new(
-        storage_type: StorageTypes,
         max_capacity: i32,
-        desired_storage: HashMap<GameResources, i32>,
-    ) -> Self {
-        let mut storage: HashMap<GameResources, i32> = HashMap::new();
-        storage.insert(GameResources::Wood, 0);
-        storage.insert(GameResources::Stone, 0);
-        storage.insert(GameResources::Plank, 0);
-        storage.insert(GameResources::StoneBrick, 0);
-        let building = StorageBuilding {
-            storage_type,
+        storage: HashMap<GameResources, i32>,
+        reserved_storage: HashMap<GameResources, i32>,
+        incoming_resources: HashMap<GameResources, i32>,
+    ) -> Stockpile {
+        Stockpile {
             storage_data: StorageData::new(
                 max_capacity,
-                desired_storage,
-                storage.clone(),
-                storage.clone(),
+                storage,
+                reserved_storage,
+                incoming_resources,
             ),
-            updated_on_startup: false,
-        };
-        return building;
+        }
     }
 
     pub fn on_proximity_event(
@@ -55,7 +40,6 @@ impl StorageBuilding {
         event: Proximity,
         hauler: &mut Hauler,
     ) {
-        println!("StorageBuilding: EVENT!");
         match event {
             Proximity::Intersecting => self.on_intersect(global_storage, hauler),
             _ => (),
@@ -80,87 +64,17 @@ impl StorageBuilding {
     }
 }
 
-impl StorageRead for StorageBuilding {
+impl StorageRead for Stockpile {
     fn get_storage_data_mut(&mut self) -> &mut StorageData {
         return &mut self.storage_data;
     }
+
     fn get_storage_data(&self) -> &StorageData {
         return &self.storage_data;
     }
 }
 
-#[derive(Clone)]
-pub struct StorageData {
-    pub max_capacity: i32,
-    pub storage: HashMap<GameResources, i32>,
-    pub reserved_storage: HashMap<GameResources, i32>,
-    pub incoming_resources: HashMap<GameResources, i32>,
-}
-
-pub trait StorageRead {
-    fn get_storage_data(&self) -> &StorageData;
-    fn get_storage_data_mut(&mut self) -> &mut StorageData;
-}
-
-pub trait StorageDataRead {
-    fn get_stored_amount(&self, resource: GameResources) -> i32;
-    fn get_storage_usage(&self) -> i32;
-}
-
-pub trait StorageInsert {
-    fn add_to_storage(
-        &mut self,
-        // storage_manager: &mut ResMut<StorageManager>,
-        resource: GameResources,
-        amount: i32,
-    ) -> Option<i32>;
-}
-
-pub trait StorageWithdraw {
-    fn remove_from_storage(
-        &mut self,
-        global_storage: &mut ResMut<GlobalStorage>,
-        resource: GameResources,
-        amount: i32,
-    ) -> Option<i32>;
-}
-
-pub trait ResourceReservation {
-    fn reserve_resource(&mut self, resource: GameResources, amount: i32) -> bool;
-    fn add_incoming_resource(&mut self, resource: GameResources, amount: i32) -> bool;
-}
-
-impl StorageData {
-    pub fn new(
-        max_capacity: i32,
-        storage: HashMap<GameResources, i32>,
-        reserved_storage: HashMap<GameResources, i32>,
-        incoming_resources: HashMap<GameResources, i32>,
-    ) -> StorageData {
-        StorageData {
-            max_capacity,
-            storage,
-            reserved_storage,
-            incoming_resources,
-        }
-    }
-}
-
-impl StorageDataRead for StorageData {
-    fn get_stored_amount(&self, resource: GameResources) -> i32 {
-        self.storage[&resource].clone()
-    }
-
-    fn get_storage_usage(&self) -> i32 {
-        let mut total: i32 = 0;
-        for (_, amount) in self.storage.iter() {
-            total += amount;
-        }
-        return total;
-    }
-}
-
-pub fn sys_update_storage_building(
+pub fn sys_update_stockpile_storage(
     mut global_storage: ResMut<GlobalStorage>,
     mut query: Query<&mut StorageBuilding>,
 ) {
@@ -183,7 +97,7 @@ fn update_storage(global_storage: &mut ResMut<GlobalStorage>, building: &mut Mut
     }
 }
 
-impl StorageWithdraw for StorageBuilding {
+impl StorageWithdraw for Stockpile {
     fn remove_from_storage(
         &mut self,
         global_storage: &mut ResMut<GlobalStorage>,
@@ -211,16 +125,15 @@ impl StorageWithdraw for StorageBuilding {
     }
 }
 
-pub fn sys_storage_sensors(
+pub fn sys_stockpile_sensors(
     events: ResMut<EventQueue>,
     mut global_storage: ResMut<GlobalStorage>,
     mut collider_set: ResMut<ColliderSet>,
-    mut warehouse_query: Query<&mut StorageBuilding>,
+    mut warehouse_query: Query<&mut Stockpile>,
     mut hauler_query: Query<&mut Hauler>,
 ) {
     while let Ok(proximity_event) = events.proximity_events.pop() {
-        println!("EVENT!");
-        let mut stockpile: Option<StorageBuilding> = None;
+        let mut stockpile: Option<Stockpile> = None;
         let mut hauler: Option<Hauler> = None;
         let (entity1, entity2) =
             get_entities_from_proximity_event(proximity_event, &mut collider_set);

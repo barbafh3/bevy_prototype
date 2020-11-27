@@ -1,15 +1,10 @@
+pub mod building;
 pub mod stockpile;
 pub mod storage;
 pub mod warehouse;
 
-use std::collections::HashMap;
-
+use self::warehouse::Warehouse;
 use crate::constants::enums::GameResources;
-
-use self::{
-    storage::{Storage, StorageTypes},
-    warehouse::Warehouse,
-};
 use bevy::{
     ecs::Res,
     ecs::{Commands, Entity, ResMut},
@@ -24,6 +19,7 @@ use bevy::{
     sprite::Sprite,
 };
 use bevy_rapier2d::rapier::{dynamics::RigidBodyBuilder, geometry::ColliderBuilder};
+use std::collections::HashMap;
 
 pub struct CurrentBuilding {
     pub entity: Option<Entity>,
@@ -49,7 +45,7 @@ pub fn sys_spawn_building(
                 sprite: Sprite::new(Vec2::new(16.0, 16.0) * 2.0),
                 ..Default::default()
             })
-            .with(Warehouse::new(1000, required_resources))
+            .with(Warehouse::new(required_resources))
             .current_entity()
             .unwrap();
         let rigid_body2 = RigidBodyBuilder::new_dynamic().can_sleep(false);

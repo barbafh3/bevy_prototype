@@ -13,8 +13,9 @@ pub fn state_warehouse_loading(
 ) {
     if has_finished_loading(&warehouse) {
         warehouse.state = super::WarehouseStates::Construction;
-    } else {
+    } else if !warehouse.has_requested_resources {
         create_haul_tasks(commands, &mut warehouse, entity);
+        warehouse.has_requested_resources = true;
     }
 }
 
@@ -44,7 +45,6 @@ pub(crate) fn create_haul_tasks(
                 amount.clone(),
                 *entity,
                 None,
-                HashMap::new(),
             );
             commands.spawn((GameTask, haul));
         }

@@ -24,6 +24,7 @@ pub fn state_hauler_carrying(
     } else {
         hauler.resource_destination = None;
         hauler.amount_requested = 0;
+        println!("Hauler: State changed to Idle");
         hauler.state = super::HaulerStates::Idle;
     }
 }
