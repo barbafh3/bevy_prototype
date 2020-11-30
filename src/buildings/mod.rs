@@ -4,7 +4,7 @@ pub mod storage;
 pub mod warehouse;
 
 use self::warehouse::Warehouse;
-use crate::constants::enums::GameResources;
+use crate::{constants::enums::GameResources, managers::villagers::IdleVillager};
 use bevy::{
     ecs::Res,
     ecs::{Commands, Entity, ResMut},
@@ -25,6 +25,9 @@ pub struct CurrentBuilding {
     pub entity: Option<Entity>,
 }
 
+#[derive(Default)]
+pub struct Building;
+
 pub fn sys_spawn_building(
     mut commands: Commands,
     keyboard_input: Res<Input<KeyCode>>,
@@ -35,8 +38,10 @@ pub fn sys_spawn_building(
     let can_spawn_building =
         keyboard_input.just_released(KeyCode::T) && current_building.entity.is_none();
     if can_spawn_building {
+        println!("Spawning building");
         let mut required_resources = HashMap::new();
         required_resources.insert(GameResources::Wood, 50);
+
         let warehouse_texture = asset_server.load("under_construction.png");
         let warehouse = commands
             .spawn(SpriteComponents {
@@ -53,6 +58,7 @@ pub fn sys_spawn_building(
             .sensor(true)
             .user_data(warehouse.to_bits() as u128);
         commands.insert(warehouse, (rigid_body2, collider2));
+
         current_building.entity = commands.current_entity();
     }
 }

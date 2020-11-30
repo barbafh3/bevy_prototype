@@ -20,9 +20,12 @@ pub fn state_warehouse_construction(
     if !warehouse.is_position_set {
         let rb_index = rb_handle.handle();
         let mut rb = rb_set.get_mut(rb_index).unwrap();
-        rb.position = Isometry::new(
-            Vector2::new(camera_data.position.x(), camera_data.position.y()),
-            0.0,
+        rb.set_position(
+            Isometry::new(
+                Vector2::new(camera_data.position.x(), camera_data.position.y()),
+                0.0,
+            ),
+            true,
         );
         warehouse.is_position_set = true;
     }

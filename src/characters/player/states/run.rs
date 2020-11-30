@@ -18,10 +18,13 @@ pub fn state_player_run(
     let direction = get_input_direction(keyboard_input);
     if direction.x() == 0.0 && direction.y() == 0.0 {
         // rb.linvel = Vector2::new(0.0, rb.linvel.y);
-        rb.linvel = Vector2::new(0.0, 0.0);
+        rb.set_linvel(Vector2::new(0.0, 0.0), true);
         player.state = PlayerStates::Idle;
     } else {
         // rb.linvel = Vector2::new(direction.x() * player.speed, rb.linvel.y);
-        rb.linvel = Vector2::new(direction.x() * player.speed, direction.y() * player.speed);
+        rb.set_linvel(
+            Vector2::new(direction.x() * player.speed, direction.y() * player.speed),
+            true,
+        );
     }
 }

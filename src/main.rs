@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use bevy::prelude::*;
 use bevy_rapier2d::{
     na::Vector2,
-    physics::{RapierConfiguration, RapierPhysicsPlugin, RigidBodyHandleComponent},
+    physics::{EventQueue, RapierConfiguration, RapierPhysicsPlugin, RigidBodyHandleComponent},
     rapier::dynamics::RigidBodySet,
     rapier::{dynamics::RigidBodyBuilder, geometry::ColliderBuilder},
     render::RapierRenderPlugin,
@@ -56,15 +56,15 @@ pub struct RigidBodyRotationState {
 
 fn startup(
     mut commands: Commands,
-    mut map: ResMut<WorldMap<WorldTile, WorldChunk<WorldTile>>>,
-    mut tile_sprite_handles: ResMut<TileSpriteHandles>,
+    // mut map: ResMut<WorldMap<WorldTile, WorldChunk<WorldTile>>>,
+    // mut tile_sprite_handles: ResMut<TileSpriteHandles>,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut rapier_config: ResMut<RapierConfiguration>,
 ) {
-    rapier_config.gravity = Vector2::new(0.0, 0.0);
-    tile_sprite_handles.handles = asset_server.load_folder("textures").unwrap();
-    map.set_dimensions(Vec2::new(3.0, 3.0));
+    // rapier_config.gravity = Vector2::new(5.0, 5.0);
+    // tile_sprite_handles.handles = asset_server.load_folder("textures").unwrap();
+    // map.set_dimensions(Vec2::new(3.0, 3.0));
 
     let camera = Camera2dComponents::default();
     let e = commands.spawn(camera).current_entity().unwrap();
@@ -89,24 +89,6 @@ fn startup(
         ..Default::default()
     });
 
-    let hauler_texture = asset_server.load("horse.png");
-    let hauler = commands
-        .spawn(SpriteComponents {
-            material: materials.add(hauler_texture.into()),
-            transform: Transform::from_translation(Vec3::new(-100.0, 100.0, 100.0)),
-            sprite: Sprite::new(Vec2::new(16.0, 16.0)),
-            ..Default::default()
-        })
-        .with(Hauler::new(50.0, 3.0, 20.0))
-        .with(IdleVillager)
-        .current_entity()
-        .unwrap();
-    let rigid_body = RigidBodyBuilder::new_dynamic()
-        .translation(0.0, 100.0)
-        .can_sleep(false);
-    let collider = ColliderBuilder::ball(10.0).user_data(hauler.to_bits() as u128);
-    commands.insert(hauler, (rigid_body, collider));
-
     let stockpile_texture = asset_server.load("stockpile.png");
     let mut storage: HashMap<GameResources, i32> = HashMap::new();
     storage.insert(GameResources::Wood, 100);
@@ -123,49 +105,57 @@ fn startup(
         .with(StorageBuilding::new(StorageTypes::Stockpile, 1000, storage))
         .current_entity()
         .unwrap();
-    let rigid_body2 = RigidBodyBuilder::new_dynamic().can_sleep(false);
-    let collider2 = ColliderBuilder::cuboid(5.0, 5.0)
+    let rigid_body = RigidBodyBuilder::new_dynamic();
+    let collider = ColliderBuilder::cuboid(5.0, 5.0)
         .sensor(true)
         .user_data(stockpile.to_bits() as u128);
-    commands.insert(stockpile, (rigid_body2, collider2));
+    commands.insert(stockpile, (rigid_body, collider));
 
-    // let rigid_body1 = RigidBodyBuilder::new_static();
-    // let collider1 = ColliderBuilder::cuboid(1000.0, 1.0);
+    let hauler_texture = asset_server.load("horse.png");
+    let hauler = commands
+        .spawn(SpriteComponents {
+            material: materials.add(hauler_texture.into()),
+            transform: Transform::from_translation(Vec3::new(0.0, 0.0, 100.0)),
+            sprite: Sprite::new(Vec2::new(16.0, 16.0) * 1.5),
+            ..Default::default()
+        })
+        .with(Hauler::new(50.0, 3.0, 20.0))
+        .with(IdleVillager)
+        .current_entity()
+        .unwrap();
+    let rigid_body2 = RigidBodyBuilder::new_dynamic();
+    let collider2 = ColliderBuilder::cuboid(5.0, 5.0)
+        .sensor(true)
+        .user_data(hauler.to_bits() as u128);
+    commands.insert(hauler, (rigid_body2, collider2));
+
+    // let rigid_body = RigidBodyBuilder::new_dynamic()
+    //     .translation(0.0, 20.0)
+    //     .can_sleep(false);
+    // let collider = ColliderBuilder::ball(5.0);
+    // commands.spawn((rigid_body, collider));
+
+    // let rigid_body1 = RigidBodyBuilder::new_static().can_sleep(false);
+    // let collider1 = ColliderBuilder::cuboid(1000.0, 1.0).sensor(true);
     // commands.spawn((rigid_body1, collider1));
-}
-
-fn lock_rigidbody_rotation(
-    mut lock_state: ResMut<RigidBodyRotationState>,
-    mut rb_set: ResMut<RigidBodySet>,
-    mut query: Query<&mut RigidBodyHandleComponent>,
-) {
-    if !lock_state.is_locked {
-        println!("Query length is {}", query.iter_mut().len());
-        for rb_handle in query.iter_mut() {
-            let rb_index = rb_handle.handle();
-            let mut rb = rb_set.get_mut(rb_index).unwrap();
-            rb.mass_properties.inv_principal_inertia_sqrt = 0.0;
-        }
-        lock_state.is_locked = true;
-    }
 }
 
 fn load_plugins(app: &mut AppBuilder) {
     app.add_plugins(DefaultPlugins)
         .add_plugin(RapierPhysicsPlugin)
-        .add_plugin(RapierRenderPlugin)
-        .add_plugin(ChunkTilesPlugin::<
-            WorldTile,
-            WorldChunk<WorldTile>,
-            WorldMap<WorldTile, WorldChunk<WorldTile>>,
-        >::default());
+        .add_plugin(RapierRenderPlugin);
+    // .add_plugin(ChunkTilesPlugin::<
+    //     WorldTile,
+    //     WorldChunk<WorldTile>,
+    //     WorldMap<WorldTile, WorldChunk<WorldTile>>,
+    // >::default());
 }
 
 fn load_resources(app: &mut AppBuilder) {
     app.add_resource(GlobalStorage::new())
-        .add_resource(RigidBodyRotationState { is_locked: false })
-        .init_resource::<TileSpriteHandles>()
-        .init_resource::<MapState>();
+        .add_resource(RigidBodyRotationState { is_locked: false });
+    // .init_resource::<TileSpriteHandles>()
+    // .init_resource::<MapState>();
 }
 
 fn load_startup_systems(app: &mut AppBuilder) {
@@ -174,7 +164,7 @@ fn load_startup_systems(app: &mut AppBuilder) {
 
 fn load_systems(app: &mut AppBuilder) {
     core_systems(app);
-    tilemap_systems(app);
+    // tilemap_systems(app);
     building_systems(app);
     task_systems(app);
     player_systems(app);
@@ -188,9 +178,7 @@ fn load_events(app: &mut AppBuilder) {
 }
 
 fn core_systems(app: &mut AppBuilder) {
-    app.add_system(sys_spawn_building.system())
-        .add_system(lock_rigidbody_rotation.system())
-        .add_system(sys_cursor_position.system());
+    app.add_system(sys_cursor_position.system());
 }
 
 fn task_systems(app: &mut AppBuilder) {
@@ -204,12 +192,13 @@ fn tilemap_systems(app: &mut AppBuilder) {
 }
 
 fn building_systems(app: &mut AppBuilder) {
-    app.add_system(sys_run_warehouse_states.system())
-        .add_system(sys_update_stockpile_storage.system())
-        .add_system(sys_stockpile_sensors.system())
-        .add_system(sys_storage_sensors.system())
-        .add_system(sys_update_storage_building.system())
-        .add_system(sys_warehouse_sensors.system());
+    app.add_system(sys_spawn_building.system());
+    app.add_system(sys_run_warehouse_states.system());
+    app.add_system(sys_update_stockpile_storage.system());
+    app.add_system(sys_stockpile_sensors.system());
+    app.add_system(sys_storage_sensors.system());
+    app.add_system(sys_update_storage_building.system());
+    app.add_system(sys_warehouse_sensors.system());
 }
 
 fn player_systems(app: &mut AppBuilder) {
@@ -226,6 +215,16 @@ pub fn get_idle_point() -> Vec2 {
     Vec2::new(100.0, 100.0)
 }
 
+fn print_events(events: Res<EventQueue>) {
+    while let Ok(proximity_event) = events.proximity_events.pop() {
+        println!("Received proximity event: {:?}", proximity_event);
+    }
+
+    while let Ok(contact_event) = events.contact_events.pop() {
+        println!("Received contact event: {:?}", contact_event);
+    }
+}
+
 fn main() {
     let mut app = App::build();
     load_events(&mut app);
@@ -233,5 +232,6 @@ fn main() {
     load_plugins(&mut app);
     load_startup_systems(&mut app);
     load_systems(&mut app);
+    app.add_system(print_events.system());
     app.run();
 }

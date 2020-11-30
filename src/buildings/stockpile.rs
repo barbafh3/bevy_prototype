@@ -47,7 +47,6 @@ impl Stockpile {
     }
 
     fn on_intersect(&mut self, global_storage: &mut ResMut<GlobalStorage>, hauler: &mut Hauler) {
-        println!("Warehouse: Hauler Intersect!");
         match hauler.state {
             HaulerStates::Loading => {
                 let removal_result = self.remove_from_storage(
@@ -129,23 +128,27 @@ pub fn sys_stockpile_sensors(
     events: ResMut<EventQueue>,
     mut global_storage: ResMut<GlobalStorage>,
     mut collider_set: ResMut<ColliderSet>,
-    mut warehouse_query: Query<&mut Stockpile>,
+    mut warehouse_query: Query<&mut StorageBuilding>,
     mut hauler_query: Query<&mut Hauler>,
 ) {
     while let Ok(proximity_event) = events.proximity_events.pop() {
-        let mut stockpile: Option<Stockpile> = None;
+        let mut storage_building: Option<StorageBuilding> = None;
         let mut hauler: Option<Hauler> = None;
         let (entity1, entity2) =
             get_entities_from_proximity_event(proximity_event, &mut collider_set);
+        println!(
+            "Stockpile Sensors: Entities = 1: {} 2: {}",
+            entity1, entity2
+        );
         if let Ok(stockpile_result) = warehouse_query.get_mut(Entity::from_bits(entity1)) {
-            match stockpile {
-                None => stockpile = Some(stockpile_result.clone()),
+            match storage_building {
+                None => storage_building = Some(stockpile_result.clone()),
                 _ => (),
             }
         }
         if let Ok(stockpile_result) = warehouse_query.get_mut(Entity::from_bits(entity2)) {
-            match stockpile {
-                None => stockpile = Some(stockpile_result.clone()),
+            match storage_building {
+                None => storage_building = Some(stockpile_result.clone()),
                 _ => (),
             }
         }
@@ -161,12 +164,18 @@ pub fn sys_stockpile_sensors(
                 _ => (),
             }
         }
-        if !hauler.is_none() && !stockpile.is_none() {
-            stockpile.unwrap().on_proximity_event(
-                &mut global_storage,
-                proximity_event.new_status,
-                &mut hauler.unwrap(),
-            );
+        if !storage_building.is_none() {
+            if !hauler.is_none() {
+                storage_building.unwrap().on_proximity_event(
+                    &mut global_storage,
+                    proximity_event.new_status,
+                    &mut hauler.unwrap(),
+                );
+            } else {
+                println!("Stockpile Sensors: No match, hauler is none");
+            }
+        } else {
+            println!("Stockpile Sensors: No match, stockpile is none");
         }
     }
 }

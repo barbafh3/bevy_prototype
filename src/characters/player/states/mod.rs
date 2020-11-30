@@ -36,9 +36,9 @@ pub fn player_state_transitions(
     for (mut player, rigidbody_handle) in query.iter_mut() {
         let rigidbody_index = rigidbody_handle.handle();
         let rigidbody = rigidbody_set.get(rigidbody_index).unwrap();
-        if rigidbody.linvel.y < 0.0 {
+        if rigidbody.linvel().y < 0.0 {
             println!("Player falling!!!");
-        } else if rigidbody.linvel.x == 0.0 && rigidbody.linvel.y == 0.0 {
+        } else if rigidbody.linvel().x == 0.0 && rigidbody.linvel().y == 0.0 {
             println!("Player state changed to Idle");
             player.state = PlayerStates::Idle;
         } else if keyboard_input.pressed(KeyCode::A) || keyboard_input.pressed(KeyCode::D) {

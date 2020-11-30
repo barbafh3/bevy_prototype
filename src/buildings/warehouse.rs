@@ -53,7 +53,7 @@ pub fn sys_warehouse_sensors(
     mut hauler_query: Query<&mut Hauler>,
 ) {
     while let Ok(proximity_event) = events.proximity_events.pop() {
-        println!("WAREHOUSE EVENT!");
+        println!("Warehouse Sensors: EVENT!");
         let mut warehouse: Option<Warehouse> = None;
         let mut hauler: Option<Hauler> = None;
         let (entity1, entity2) =

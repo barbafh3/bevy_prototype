@@ -18,7 +18,7 @@ pub fn state_hauler_loading(
     origin_query: &Query<&Transform>,
 ) {
     let rb_index = rb_handle.handle();
-    let mut rb = rb_set.get_mut(rb_index).unwrap();
+    let rb = rb_set.get_mut(rb_index).unwrap();
     if hauler.is_idle {
         commands.remove_one::<IdleVillager>(entity);
         hauler.is_idle = false;
@@ -27,12 +27,12 @@ pub fn state_hauler_loading(
     //     // Get a new origin for the resource
     // }
     let target_transform = origin_query.get(hauler.resource_origin.unwrap()).unwrap();
-    if hauler.capacity <= 0 && !hauler.resource_origin.is_none() {
+    if hauler.capacity <= 0 {
         let vector = target_transform.translation - transform.translation;
         let direction = normalize(vector);
-        rb.linvel = direction * hauler.speed;
+        rb.set_linvel(direction * hauler.speed, true);
     } else {
-        rb.linvel = Vector2::new(0.0, 0.0);
+        rb.set_linvel(Vector2::new(0.0, 0.0), true);
         hauler.resource_origin = None;
         println!("Hauler: State changed to Carrying");
         hauler.state = super::HaulerStates::Carrying;

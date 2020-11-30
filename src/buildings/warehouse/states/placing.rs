@@ -23,9 +23,12 @@ pub fn state_placing_warehouse(
 ) {
     let rb_index = rb_handle.handle();
     let mut rb = rb_set.get_mut(rb_index).unwrap();
-    rb.position = Isometry::new(
-        Vector2::new(camera_data.position.x(), camera_data.position.y()),
-        0.0,
+    rb.set_position(
+        Isometry::new(
+            Vector2::new(camera_data.position.x(), camera_data.position.y()),
+            0.0,
+        ),
+        true,
     );
     if mouse_input.just_released(MouseButton::Right) && current_building.entity.is_some() {
         commands.despawn(current_building.entity.unwrap());

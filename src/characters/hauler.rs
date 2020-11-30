@@ -72,6 +72,7 @@ impl Hauler {
     }
 
     pub fn take_resources(&mut self, amount: i32) {
+        println!("Hauler: Resources taken: {}", amount);
         self.capacity = amount;
     }
 }
@@ -85,7 +86,7 @@ impl IdleMovement for Hauler {
         rb_handle: Mut<RigidBodyHandleComponent>,
     ) {
         let rb_index = rb_handle.handle();
-        let mut rb = rb_set.get_mut(rb_index).unwrap();
+        let rb = rb_set.get_mut(rb_index).unwrap();
         self.movement_tick = run_movement_tick(self, delta);
         let can_change_target = self.movement_tick <= 0.0;
         if can_change_target {
@@ -100,9 +101,9 @@ impl IdleMovement for Hauler {
         let is_far_enough = target_vector.x().abs() > 2.0 && target_vector.y().abs() > 2.0;
         if is_far_enough {
             let direction = normalize(target_vector);
-            rb.linvel = direction * self.speed;
+            rb.set_linvel(direction * self.speed, true);
         } else {
-            rb.linvel = Vector2::new(0.0, 0.0);
+            rb.set_linvel(Vector2::new(0.0, 0.0), true);
         }
     }
 }

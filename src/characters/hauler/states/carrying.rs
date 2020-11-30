@@ -20,7 +20,7 @@ pub fn state_hauler_carrying(
     if hauler.capacity > 0 {
         let vector = target_transform.translation - transform.translation;
         let direction = normalize(vector);
-        rb.linvel = direction * hauler.speed;
+        rb.set_linvel(direction * hauler.speed, true);
     } else {
         hauler.resource_destination = None;
         hauler.amount_requested = 0;

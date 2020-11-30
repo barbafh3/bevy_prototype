@@ -1,4 +1,4 @@
-use bevy::ecs::{Entity, Mut, Query, ResMut};
+use bevy::ecs::{Entity, Mut, Query, QuerySet, ResMut};
 use bevy_rapier2d::{
     physics::EventQueue,
     rapier::geometry::{ColliderSet, Proximity},
@@ -7,7 +7,7 @@ use bevy_rapier2d::{
 use crate::{
     characters::hauler::states::HaulerStates,
     characters::hauler::Hauler,
-    constants::enums::GameResources,
+    constants::{enums::GameResources, tasks::HAULER_CAPACITY},
     managers::{events::get_entities_from_proximity_event, storage::GlobalStorage},
 };
 use std::collections::HashMap;
@@ -63,7 +63,8 @@ impl StorageBuilding {
     }
 
     fn on_intersect(&mut self, global_storage: &mut ResMut<GlobalStorage>, hauler: &mut Hauler) {
-        println!("Warehouse: Hauler Intersect!");
+        println!("Stockpile: Hauler Intersect!");
+        println!("Stockpile: Hauler is {:?}", hauler.state);
         match hauler.state {
             HaulerStates::Loading => {
                 let removal_result = self.remove_from_storage(
@@ -71,8 +72,13 @@ impl StorageBuilding {
                     hauler.current_resource.unwrap(),
                     hauler.amount_requested,
                 );
-                if let Some(amount) = removal_result {
-                    hauler.take_resources(amount);
+                if let Some(remainder) = removal_result {
+                    println!("Stockpile: Remainder = {}", remainder);
+                    if remainder == 0 {
+                        hauler.take_resources(HAULER_CAPACITY);
+                    } else {
+                        hauler.take_resources(HAULER_CAPACITY - remainder)
+                    }
                 }
             }
             _ => (),
@@ -190,6 +196,7 @@ impl StorageWithdraw for StorageBuilding {
         resource: GameResources,
         amount: i32,
     ) -> Option<i32> {
+        println!("Stockpile: Removing from storage");
         let storage_data = self.get_storage_data_mut();
         if storage_data.get_storage_usage() > 0 {
             let storage_has_resources: bool = storage_data.get_stored_amount(resource) >= amount;
@@ -215,22 +222,22 @@ pub fn sys_storage_sensors(
     events: ResMut<EventQueue>,
     mut global_storage: ResMut<GlobalStorage>,
     mut collider_set: ResMut<ColliderSet>,
-    mut warehouse_query: Query<&mut StorageBuilding>,
+    mut storage_query: Query<&mut StorageBuilding>,
     mut hauler_query: Query<&mut Hauler>,
 ) {
     while let Ok(proximity_event) = events.proximity_events.pop() {
-        println!("EVENT!");
+        println!("Storage Sensors: EVENT!");
         let mut stockpile: Option<StorageBuilding> = None;
-        let mut hauler: Option<Hauler> = None;
+        let mut hauler: Option<Mut<Hauler>> = None;
         let (entity1, entity2) =
             get_entities_from_proximity_event(proximity_event, &mut collider_set);
-        if let Ok(stockpile_result) = warehouse_query.get_mut(Entity::from_bits(entity1)) {
+        if let Ok(stockpile_result) = storage_query.get_mut(Entity::from_bits(entity1)) {
             match stockpile {
                 None => stockpile = Some(stockpile_result.clone()),
                 _ => (),
             }
         }
-        if let Ok(stockpile_result) = warehouse_query.get_mut(Entity::from_bits(entity2)) {
+        if let Ok(stockpile_result) = storage_query.get_mut(Entity::from_bits(entity2)) {
             match stockpile {
                 None => stockpile = Some(stockpile_result.clone()),
                 _ => (),
@@ -238,13 +245,13 @@ pub fn sys_storage_sensors(
         }
         if let Ok(hauler_result) = hauler_query.get_mut(Entity::from_bits(entity1)) {
             match hauler {
-                None => hauler = Some(*hauler_result),
+                None => hauler = Some(hauler_result),
                 _ => (),
             }
         }
         if let Ok(hauler_result) = hauler_query.get_mut(Entity::from_bits(entity2)) {
             match hauler {
-                None => hauler = Some(*hauler_result),
+                None => hauler = Some(hauler_result),
                 _ => (),
             }
         }

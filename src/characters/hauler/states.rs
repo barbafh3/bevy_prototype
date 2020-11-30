@@ -13,7 +13,7 @@ use bevy::{
 };
 use bevy_rapier2d::{physics::RigidBodyHandleComponent, rapier::dynamics::RigidBodySet};
 
-#[derive(Eq, PartialEq, Copy, Clone)]
+#[derive(Eq, PartialEq, Copy, Clone, Debug)]
 pub enum HaulerStates {
     Idle,
     Loading,
