@@ -2,8 +2,8 @@ pub mod states;
 
 use self::states::WarehouseStates;
 use super::{
-    storage::StorageInsert, storage::StorageRead, storage::StorageWithdraw,
-    storage_data::StorageData, storage_data::StorageDataRead,
+    building::ConstructionWork, storage::StorageInsert, storage::StorageRead,
+    storage::StorageWithdraw, storage_data::StorageData, storage_data::StorageDataRead,
 };
 use crate::{
     characters::hauler::states::HaulerStates,
@@ -20,13 +20,17 @@ pub struct Warehouse {
     pub storage_data: StorageData,
     pub required_resources: EnumMap<GameResources, i32>,
     pub construction_time: f32,
+    pub has_requested_resources: bool,
     pub warehouse_sprite_added: bool,
     pub is_position_set: bool,
-    pub has_requested_resources: bool,
 }
 
 impl Warehouse {
-    pub fn new(max_capacity: i32, required_resources: EnumMap<GameResources, i32>) -> Warehouse {
+    pub fn new(
+        max_capacity: i32,
+        required_resources: EnumMap<GameResources, i32>,
+        construction_time: f32,
+    ) -> Warehouse {
         let warehouse = Warehouse {
             state: WarehouseStates::Placing,
             storage_data: StorageData::new(
@@ -36,10 +40,10 @@ impl Warehouse {
                 get_resources_list(),
             ),
             required_resources,
-            construction_time: 10.0,
+            construction_time,
+            has_requested_resources: false,
             warehouse_sprite_added: false,
             is_position_set: false,
-            has_requested_resources: false,
         };
         return warehouse;
     }
@@ -120,6 +124,12 @@ impl Warehouse {
     }
 }
 
+impl ConstructionWork for Warehouse {
+    fn do_construction_work(&mut self) {
+        todo!()
+    }
+}
+
 impl StorageInsert for Warehouse {
     fn add_to_storage(
         &mut self,
@@ -130,13 +140,15 @@ impl StorageInsert for Warehouse {
         let total_amount_after_adding = self.storage_data.storage[resource] + amount;
         if total_amount_after_adding <= self.storage_data.max_capacity {
             self.storage_data.storage[resource] += amount;
+            global_storage.update_global_storage(resource, amount);
             Some(0)
         } else {
             let amount_possible_to_add =
                 amount - (total_amount_after_adding - self.storage_data.max_capacity);
             let amount_remaining_on_hauler = amount - amount_possible_to_add;
             if amount_possible_to_add > 0 {
-                self.storage_data.storage[resource] += amount;
+                self.storage_data.storage[resource] += amount_possible_to_add;
+                global_storage.update_global_storage(resource, amount_possible_to_add);
                 Some(amount_remaining_on_hauler)
             } else {
                 None

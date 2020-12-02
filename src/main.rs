@@ -29,10 +29,14 @@ use characters::hauler::{states::sys_run_hauler_state, Hauler};
 use constants::enums::{get_resources_list, GameResources};
 use managers::{
     storage::GlobalStorage,
-    tasks::haul::{sys_close_haul_tasks, sys_run_haul_tasks},
+    tasks::{
+        haul::{sys_close_haul_tasks, sys_run_haul_tasks},
+        TaskFinished,
+    },
     tilemap::{build_tilemap, load_atlas, MapState, TileSpriteHandles, WorldTile},
     villagers::sys_new_villager_requests,
     villagers::IdleVillager,
+    villagers::SpawnRequest,
 };
 
 fn startup(
@@ -147,11 +151,10 @@ fn load_systems(app: &mut AppBuilder) {
     villager_systems(app);
 }
 
-// fn load_events(app: &mut AppBuilder) {
-//     app.add_event::<HaulerFinished>()
-//         .add_event::<SpawnRequest>()
-//         .add_event::<TaskFinished>();
-// }
+fn load_events(app: &mut AppBuilder) {
+    app.add_event::<SpawnRequest>();
+    app.add_event::<TaskFinished>();
+}
 
 fn core_systems(app: &mut AppBuilder) {
     app.add_system(sys_cursor_position.system());
@@ -195,7 +198,7 @@ pub fn get_idle_point() -> Vec2 {
 
 fn main() {
     let mut app = App::build();
-    // load_events(&mut app);
+    load_events(&mut app);
     load_resources(&mut app);
     load_plugins(&mut app);
     load_startup_systems(&mut app);

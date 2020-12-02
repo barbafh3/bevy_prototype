@@ -22,5 +22,5 @@ impl Drop for Build {
 }
 
 impl Build {
-    fn run_task(&mut self, delta: f32, event: &mut ResMut<Events<TaskFinished>>) {}
+    fn run_task(&mut self, delta: f32) {}
 }

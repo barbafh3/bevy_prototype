@@ -52,7 +52,7 @@ pub fn sys_spawn_building(
             sprite: Sprite::new(Vec2::new(16.0, 16.0) * 2.0),
             ..Default::default()
         })
-        .with(Warehouse::new(1000, required_resources))
+        .with(Warehouse::new(1000, required_resources, 10.0))
         .current_entity()
         .unwrap();
     let rigid_body2 = RigidBodyBuilder::new_dynamic().can_sleep(false);

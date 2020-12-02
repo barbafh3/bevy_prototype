@@ -1,6 +1,7 @@
 use enum_map::{enum_map, Enum, EnumMap};
 use strum_macros::*;
 
+#[allow(dead_code)]
 #[derive(Debug, Display, Hash, Eq, PartialEq, Clone, Copy, Enum)]
 pub enum GameResources {
     Wood,
@@ -9,6 +10,7 @@ pub enum GameResources {
     StoneBrick,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Display, Clone, Copy, Eq, PartialEq)]
 pub enum Jobs {
     Villager,
@@ -18,6 +20,7 @@ pub enum Jobs {
     Woodcutter,
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Display)]
 pub enum Tasks {
     Haul,
