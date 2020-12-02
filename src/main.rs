@@ -37,7 +37,7 @@ use characters::{
     hauler::{states::sys_run_hauler_state, Hauler, HaulerFinished},
     player::{states::run_player_state, sys_player_input},
 };
-use constants::enums::GameResources;
+use constants::enums::{get_resources_list, GameResources};
 use managers::{
     storage::GlobalStorage,
     tasks::{
@@ -90,11 +90,8 @@ fn startup(
     });
 
     let stockpile_texture = asset_server.load("stockpile.png");
-    let mut storage: HashMap<GameResources, i32> = HashMap::new();
-    storage.insert(GameResources::Wood, 100);
-    storage.insert(GameResources::Stone, 0);
-    storage.insert(GameResources::Plank, 0);
-    storage.insert(GameResources::StoneBrick, 0);
+    let mut storage = get_resources_list();
+    storage[GameResources::Wood] = 100;
     let stockpile = commands
         .spawn(SpriteComponents {
             material: materials.add(stockpile_texture.into()),

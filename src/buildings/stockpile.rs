@@ -3,8 +3,12 @@ use bevy_rapier2d::{
     physics::EventQueue,
     rapier::geometry::{ColliderSet, Proximity},
 };
+use enum_map::EnumMap;
 
-use super::storage::*;
+use super::{
+    storage::*,
+    storage_data::{StorageData, StorageDataRead},
+};
 use crate::{
     characters::hauler::states::HaulerStates,
     characters::hauler::Hauler,
@@ -17,12 +21,13 @@ use std::collections::HashMap;
 pub struct Stockpile {
     storage_data: StorageData,
 }
+
 impl Stockpile {
     pub fn new(
         max_capacity: i32,
-        storage: HashMap<GameResources, i32>,
-        reserved_storage: HashMap<GameResources, i32>,
-        incoming_resources: HashMap<GameResources, i32>,
+        storage: EnumMap<GameResources, i32>,
+        reserved_storage: EnumMap<GameResources, i32>,
+        incoming_resources: EnumMap<GameResources, i32>,
     ) -> Stockpile {
         Stockpile {
             storage_data: StorageData::new(
@@ -107,13 +112,13 @@ impl StorageWithdraw for Stockpile {
         if storage_data.get_storage_usage() > 0 {
             let storage_has_resources: bool = storage_data.get_stored_amount(resource) >= amount;
             if storage_has_resources {
-                *storage_data.storage.get_mut(&resource).unwrap() -= amount;
-                *storage_data.reserved_storage.get_mut(&resource).unwrap() -= amount;
+                storage_data.storage[resource] -= amount;
+                storage_data.reserved_storage[resource] -= amount;
                 global_storage.update_global_storage(resource, -amount);
                 return Some(0);
             } else {
-                let remaining_resources = storage_data.storage.get(&resource).unwrap().clone();
-                *storage_data.storage.get_mut(&resource).unwrap() = 0;
+                let remaining_resources = storage_data.storage[resource].clone();
+                storage_data.storage[resource] = 0;
                 global_storage.update_global_storage(resource, -remaining_resources);
                 let amount_not_removed = amount - remaining_resources;
                 return Some(amount_not_removed);

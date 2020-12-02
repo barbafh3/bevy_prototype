@@ -23,10 +23,8 @@ pub fn state_hauler_loading(
         commands.remove_one::<IdleVillager>(entity);
         hauler.is_idle = false;
     }
-    // if hauler.resource_origin.is_none() {
-    //     // Get a new origin for the resource
-    // }
     let target_transform = origin_query.get(hauler.resource_origin.unwrap()).unwrap();
+    println!("Hauler: {:?}", &hauler);
     if hauler.capacity <= 0 {
         let vector = target_transform.translation - transform.translation;
         let direction = normalize(vector);

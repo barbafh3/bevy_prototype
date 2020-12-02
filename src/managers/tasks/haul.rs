@@ -1,8 +1,8 @@
 use super::TaskFinished;
 use crate::{
     buildings::storage::StorageBuilding,
-    buildings::storage::StorageDataRead,
     buildings::storage::StorageRead,
+    buildings::storage_data::StorageDataRead,
     characters::hauler::states::HaulerStates,
     characters::hauler::Hauler,
     constants::{enums::GameResources, tasks::HAULER_CAPACITY},

@@ -1,6 +1,7 @@
 pub mod building;
 pub mod stockpile;
 pub mod storage;
+pub mod storage_data;
 pub mod warehouse;
 
 use self::warehouse::Warehouse;

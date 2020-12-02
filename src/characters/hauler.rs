@@ -21,7 +21,7 @@ pub struct HaulerFinished {
     amount_delivered: i32,
 }
 
-#[derive(Copy, Clone, PartialEq)]
+#[derive(Debug, Copy, Clone, PartialEq)]
 pub struct Hauler {
     villager_type: Jobs,
     pub state: HaulerStates,
@@ -72,8 +72,10 @@ impl Hauler {
     }
 
     pub fn take_resources(&mut self, amount: i32) {
-        println!("Hauler: Resources taken: {}", amount);
+        println!("Hauler: Resources taken: {}", amount.clone());
         self.capacity = amount;
+        println!("Hauler: Amount stored: {}", self.capacity.clone());
+        println!("Hauler: After taking resources {:?}", &self);
     }
 }
 
