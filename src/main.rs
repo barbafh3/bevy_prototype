@@ -6,13 +6,9 @@ mod constants;
 mod managers;
 mod utils;
 
-use std::collections::HashMap;
-
 use bevy::prelude::*;
 use bevy_rapier2d::{
-    na::Vector2,
-    physics::{EventQueue, RapierConfiguration, RapierPhysicsPlugin, RigidBodyHandleComponent},
-    rapier::dynamics::RigidBodySet,
+    physics::RapierPhysicsPlugin,
     rapier::{dynamics::RigidBodyBuilder, geometry::ColliderBuilder},
     render::RapierRenderPlugin,
 };
@@ -22,49 +18,34 @@ use bevy_tilemap::{
     ChunkTilesPlugin,
 };
 use buildings::{
-    stockpile::sys_stockpile_sensors,
-    stockpile::sys_update_stockpile_storage,
-    stockpile::Stockpile,
-    storage::sys_storage_sensors,
-    storage::sys_update_storage_building,
-    storage::{StorageBuilding, StorageTypes},
+    collision_detection::sys_filter_collision_events,
+    stockpile::{sys_update_stockpile_storage, Stockpile},
     sys_spawn_building,
-    warehouse::{states::sys_run_warehouse_states, sys_warehouse_sensors},
+    warehouse::states::sys_run_warehouse_states,
     CurrentBuilding,
 };
 use camera::{sys_cursor_position, CameraData, CustomCursorState};
-use characters::{
-    hauler::{states::sys_run_hauler_state, Hauler, HaulerFinished},
-    player::{states::run_player_state, sys_player_input},
-};
+use characters::hauler::{states::sys_run_hauler_state, Hauler};
 use constants::enums::{get_resources_list, GameResources};
 use managers::{
     storage::GlobalStorage,
-    tasks::{
-        haul::{sys_close_haul_tasks, sys_run_haul_tasks},
-        TaskFinished,
-    },
+    tasks::haul::{sys_close_haul_tasks, sys_run_haul_tasks},
     tilemap::{build_tilemap, load_atlas, MapState, TileSpriteHandles, WorldTile},
     villagers::sys_new_villager_requests,
     villagers::IdleVillager,
-    villagers::SpawnRequest,
 };
-
-pub struct RigidBodyRotationState {
-    is_locked: bool,
-}
 
 fn startup(
     mut commands: Commands,
-    // mut map: ResMut<WorldMap<WorldTile, WorldChunk<WorldTile>>>,
-    // mut tile_sprite_handles: ResMut<TileSpriteHandles>,
+    mut map: ResMut<WorldMap<WorldTile, WorldChunk<WorldTile>>>,
+    mut tile_sprite_handles: ResMut<TileSpriteHandles>,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
-    mut rapier_config: ResMut<RapierConfiguration>,
+    // mut rapier_config: ResMut<RapierConfiguration>,
 ) {
     // rapier_config.gravity = Vector2::new(5.0, 5.0);
-    // tile_sprite_handles.handles = asset_server.load_folder("textures").unwrap();
-    // map.set_dimensions(Vec2::new(3.0, 3.0));
+    tile_sprite_handles.handles = asset_server.load_folder("textures").unwrap();
+    map.set_dimensions(Vec2::new(3.0, 3.0));
 
     let camera = Camera2dComponents::default();
     let e = commands.spawn(camera).current_entity().unwrap();
@@ -99,7 +80,7 @@ fn startup(
             sprite: Sprite::new(Vec2::new(16.0, 16.0) * 2.0),
             ..Default::default()
         })
-        .with(StorageBuilding::new(StorageTypes::Stockpile, 1000, storage))
+        .with(Stockpile::new(1000, storage))
         .current_entity()
         .unwrap();
     let rigid_body = RigidBodyBuilder::new_dynamic();
@@ -140,19 +121,18 @@ fn startup(
 fn load_plugins(app: &mut AppBuilder) {
     app.add_plugins(DefaultPlugins)
         .add_plugin(RapierPhysicsPlugin)
-        .add_plugin(RapierRenderPlugin);
-    // .add_plugin(ChunkTilesPlugin::<
-    //     WorldTile,
-    //     WorldChunk<WorldTile>,
-    //     WorldMap<WorldTile, WorldChunk<WorldTile>>,
-    // >::default());
+        .add_plugin(RapierRenderPlugin)
+        .add_plugin(ChunkTilesPlugin::<
+            WorldTile,
+            WorldChunk<WorldTile>,
+            WorldMap<WorldTile, WorldChunk<WorldTile>>,
+        >::default());
 }
 
 fn load_resources(app: &mut AppBuilder) {
     app.add_resource(GlobalStorage::new())
-        .add_resource(RigidBodyRotationState { is_locked: false });
-    // .init_resource::<TileSpriteHandles>()
-    // .init_resource::<MapState>();
+        .init_resource::<TileSpriteHandles>()
+        .init_resource::<MapState>();
 }
 
 fn load_startup_systems(app: &mut AppBuilder) {
@@ -161,18 +141,17 @@ fn load_startup_systems(app: &mut AppBuilder) {
 
 fn load_systems(app: &mut AppBuilder) {
     core_systems(app);
-    // tilemap_systems(app);
+    tilemap_systems(app);
     building_systems(app);
     task_systems(app);
-    player_systems(app);
     villager_systems(app);
 }
 
-fn load_events(app: &mut AppBuilder) {
-    app.add_event::<HaulerFinished>()
-        .add_event::<SpawnRequest>()
-        .add_event::<TaskFinished>();
-}
+// fn load_events(app: &mut AppBuilder) {
+//     app.add_event::<HaulerFinished>()
+//         .add_event::<SpawnRequest>()
+//         .add_event::<TaskFinished>();
+// }
 
 fn core_systems(app: &mut AppBuilder) {
     app.add_system(sys_cursor_position.system());
@@ -191,16 +170,8 @@ fn tilemap_systems(app: &mut AppBuilder) {
 fn building_systems(app: &mut AppBuilder) {
     app.add_system(sys_spawn_building.system());
     app.add_system(sys_run_warehouse_states.system());
+    app.add_system(sys_filter_collision_events.system());
     app.add_system(sys_update_stockpile_storage.system());
-    app.add_system(sys_stockpile_sensors.system());
-    app.add_system(sys_storage_sensors.system());
-    app.add_system(sys_update_storage_building.system());
-    app.add_system(sys_warehouse_sensors.system());
-}
-
-fn player_systems(app: &mut AppBuilder) {
-    app.add_system(run_player_state.system())
-        .add_system(sys_player_input.system());
 }
 
 fn villager_systems(app: &mut AppBuilder) {
@@ -212,23 +183,22 @@ pub fn get_idle_point() -> Vec2 {
     Vec2::new(100.0, 100.0)
 }
 
-fn print_events(events: Res<EventQueue>) {
-    while let Ok(proximity_event) = events.proximity_events.pop() {
-        println!("Received proximity event: {:?}", proximity_event);
-    }
+// fn print_events(events: Res<EventQueue>) {
+//     while let Ok(proximity_event) = events.proximity_events.pop() {
+//         println!("Received proximity event: {:?}", proximity_event);
+//     }
 
-    while let Ok(contact_event) = events.contact_events.pop() {
-        println!("Received contact event: {:?}", contact_event);
-    }
-}
+//     while let Ok(contact_event) = events.contact_events.pop() {
+//         println!("Received contact event: {:?}", contact_event);
+//     }
+// }
 
 fn main() {
     let mut app = App::build();
-    load_events(&mut app);
+    // load_events(&mut app);
     load_resources(&mut app);
     load_plugins(&mut app);
     load_startup_systems(&mut app);
     load_systems(&mut app);
-    app.add_system(print_events.system());
     app.run();
 }

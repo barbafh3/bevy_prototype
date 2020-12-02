@@ -1,16 +1,14 @@
 use super::TaskFinished;
 use crate::{
-    buildings::storage::StorageBuilding,
+    buildings::stockpile::Stockpile,
     buildings::storage::StorageRead,
     buildings::storage_data::StorageDataRead,
-    characters::hauler::states::HaulerStates,
     characters::hauler::Hauler,
     constants::{enums::GameResources, tasks::HAULER_CAPACITY},
     managers::storage::GlobalStorage,
     managers::villagers::IdleVillager,
 };
 use bevy::{
-    ecs::Mut,
     ecs::Query,
     ecs::Res,
     ecs::{Commands, Local},
@@ -18,7 +16,6 @@ use bevy::{
     prelude::EventReader,
     prelude::Events,
 };
-use std::collections::HashMap;
 
 pub struct Haul {
     has_loaded: bool,
@@ -58,7 +55,7 @@ pub fn sys_run_haul_tasks(
     mut events: ResMut<Events<TaskFinished>>,
     mut haul_query: Query<(Entity, &mut Haul)>,
     mut idle_query: Query<(Entity, &IdleVillager, &mut Hauler)>,
-    mut storage_query: Query<(Entity, &mut StorageBuilding)>,
+    mut storage_query: Query<(Entity, &mut Stockpile)>,
 ) {
     for (entity, mut haul) in haul_query.iter_mut() {
         run_haul(
@@ -88,16 +85,13 @@ fn run_haul(
     events: &mut ResMut<Events<TaskFinished>>,
     global_storage: &mut ResMut<GlobalStorage>,
     idle_query: &mut Query<(Entity, &IdleVillager, &mut Hauler)>,
-    storage_query: &mut Query<(Entity, &mut StorageBuilding)>,
+    storage_query: &mut Query<(Entity, &mut Stockpile)>,
 ) {
     if !haul.has_loaded {
-        println!("Haul: Starting...");
-        println!("Haul: Requested amount: {}", haul.total_resource_amount);
         let required_haulers_raw: f32 = haul.total_resource_amount as f32 / HAULER_CAPACITY as f32;
         haul.required_haulers = required_haulers_raw.ceil() as i32;
         get_idle_haulers(haul, idle_query);
         haul.has_loaded = true;
-        println!("Haul: Started!");
     } else {
         let available_resource_amount = global_storage
             .get_global_resouce_amount(haul.resource_type)
@@ -138,11 +132,6 @@ fn run_haul(
                                 } else {
                                     hauler.amount_requested = amount_available;
                                 }
-                                hauler.state = HaulerStates::Loading;
-                                println!(
-                                    "Haul: Hauler amount: {}",
-                                    hauler.amount_requested.clone()
-                                );
                                 haul.amount_reserved = hauler.amount_requested;
                                 haul.required_haulers -= 1;
                                 haul.working_haulers += 1;
@@ -163,16 +152,6 @@ fn run_haul(
 
 fn get_idle_haulers(haul: &mut Haul, idle_query: &mut Query<(Entity, &IdleVillager, &mut Hauler)>) {
     for (entity, _, _) in idle_query.iter_mut() {
-        println!("Haul: Idle hauler found!");
         haul.hauler_list.push(entity);
     }
-}
-
-fn activate_hauler(
-    haul: &Haul,
-    entity: &Entity,
-    hauler: &mut Hauler,
-    storage_query: &mut Query<(Entity, &mut StorageBuilding)>,
-) -> i32 {
-    return hauler.amount_requested;
 }

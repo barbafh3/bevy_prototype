@@ -1,34 +1,11 @@
 use super::WarehouseStates;
-use crate::{buildings::warehouse::Warehouse, camera::CameraData};
+use crate::buildings::warehouse::Warehouse;
 use bevy::{
     core::Time,
-    ecs::{Mut, Res, ResMut},
-};
-use bevy_rapier2d::{
-    na::Vector2,
-    physics::RigidBodyHandleComponent,
-    rapier::{dynamics::RigidBodySet, math::Isometry},
+    ecs::{Mut, Res},
 };
 
-pub fn state_warehouse_construction(
-    time: &Res<Time>,
-    mut warehouse: Mut<Warehouse>,
-    camera_data: &Res<CameraData>,
-    rb_set: &mut ResMut<RigidBodySet>,
-    rb_handle: Mut<RigidBodyHandleComponent>,
-) {
-    if !warehouse.is_position_set {
-        let rb_index = rb_handle.handle();
-        let mut rb = rb_set.get_mut(rb_index).unwrap();
-        rb.set_position(
-            Isometry::new(
-                Vector2::new(camera_data.position.x(), camera_data.position.y()),
-                0.0,
-            ),
-            true,
-        );
-        warehouse.is_position_set = true;
-    }
+pub fn state_warehouse_construction(time: &Res<Time>, mut warehouse: Mut<Warehouse>) {
     warehouse.construction_time = run_construction_tick(&warehouse, time.delta_seconds);
     if warehouse.construction_time <= 0.0 {
         warehouse.state = WarehouseStates::Idle;

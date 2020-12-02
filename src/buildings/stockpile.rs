@@ -1,49 +1,42 @@
-use bevy::ecs::{Entity, Mut, Query, ResMut};
-use bevy_rapier2d::{
-    physics::EventQueue,
-    rapier::geometry::{ColliderSet, Proximity},
-};
-use enum_map::EnumMap;
-
 use super::{
-    storage::*,
+    storage::{StorageRead, StorageWithdraw},
     storage_data::{StorageData, StorageDataRead},
 };
 use crate::{
     characters::hauler::states::HaulerStates,
     characters::hauler::Hauler,
-    constants::enums::GameResources,
-    managers::{events::get_entities_from_proximity_event, storage::GlobalStorage},
+    constants::{enums::get_resources_list, enums::GameResources, tasks::HAULER_CAPACITY},
+    managers::storage::GlobalStorage,
 };
-use std::collections::HashMap;
+use bevy::ecs::{Mut, Query, ResMut};
+use bevy_rapier2d::rapier::geometry::Proximity;
+use enum_map::EnumMap;
 
-#[derive(Clone)]
+#[derive(Copy, Clone)]
 pub struct Stockpile {
-    storage_data: StorageData,
+    pub storage_data: StorageData,
+    pub updated_on_startup: bool,
 }
 
 impl Stockpile {
-    pub fn new(
-        max_capacity: i32,
-        storage: EnumMap<GameResources, i32>,
-        reserved_storage: EnumMap<GameResources, i32>,
-        incoming_resources: EnumMap<GameResources, i32>,
-    ) -> Stockpile {
-        Stockpile {
+    pub fn new(max_capacity: i32, desired_storage: EnumMap<GameResources, i32>) -> Self {
+        let building = Stockpile {
             storage_data: StorageData::new(
                 max_capacity,
-                storage,
-                reserved_storage,
-                incoming_resources,
+                desired_storage,
+                get_resources_list(),
+                get_resources_list(),
             ),
-        }
+            updated_on_startup: false,
+        };
+        return building;
     }
 
     pub fn on_proximity_event(
         &mut self,
         global_storage: &mut ResMut<GlobalStorage>,
         event: Proximity,
-        hauler: &mut Hauler,
+        hauler: &mut Mut<Hauler>,
     ) {
         match event {
             Proximity::Intersecting => self.on_intersect(global_storage, hauler),
@@ -51,7 +44,11 @@ impl Stockpile {
         }
     }
 
-    fn on_intersect(&mut self, global_storage: &mut ResMut<GlobalStorage>, hauler: &mut Hauler) {
+    fn on_intersect(
+        &mut self,
+        global_storage: &mut ResMut<GlobalStorage>,
+        hauler: &mut Mut<Hauler>,
+    ) {
         match hauler.state {
             HaulerStates::Loading => {
                 let removal_result = self.remove_from_storage(
@@ -59,8 +56,12 @@ impl Stockpile {
                     hauler.current_resource.unwrap(),
                     hauler.amount_requested,
                 );
-                if let Some(amount) = removal_result {
-                    hauler.take_resources(amount);
+                if let Some(remainder) = removal_result {
+                    if remainder == 0 {
+                        hauler.take_resources(HAULER_CAPACITY);
+                    } else {
+                        hauler.take_resources(HAULER_CAPACITY - remainder)
+                    }
                 }
             }
             _ => (),
@@ -72,7 +73,6 @@ impl StorageRead for Stockpile {
     fn get_storage_data_mut(&mut self) -> &mut StorageData {
         return &mut self.storage_data;
     }
-
     fn get_storage_data(&self) -> &StorageData {
         return &self.storage_data;
     }
@@ -80,24 +80,14 @@ impl StorageRead for Stockpile {
 
 pub fn sys_update_stockpile_storage(
     mut global_storage: ResMut<GlobalStorage>,
-    mut query: Query<&mut StorageBuilding>,
+    mut query: Query<&mut Stockpile>,
 ) {
-    for mut building in query.iter_mut() {
+    for building in query.iter_mut() {
         if !building.updated_on_startup {
-            match building.storage_type {
-                StorageTypes::Stockpile => {
-                    update_storage(&mut global_storage, &mut building);
-                    building.updated_on_startup = true;
-                }
-                _ => (),
+            for (resource, amount) in building.storage_data.storage.iter() {
+                global_storage.update_global_storage(resource.clone(), amount.clone());
             }
         }
-    }
-}
-
-fn update_storage(global_storage: &mut ResMut<GlobalStorage>, building: &mut Mut<StorageBuilding>) {
-    for (resource, amount) in building.storage_data.storage.iter() {
-        global_storage.update_global_storage(resource.clone(), amount.clone());
     }
 }
 
@@ -129,58 +119,67 @@ impl StorageWithdraw for Stockpile {
     }
 }
 
-pub fn sys_stockpile_sensors(
-    events: ResMut<EventQueue>,
-    mut global_storage: ResMut<GlobalStorage>,
-    mut collider_set: ResMut<ColliderSet>,
-    mut warehouse_query: Query<&mut StorageBuilding>,
-    mut hauler_query: Query<&mut Hauler>,
-) {
-    while let Ok(proximity_event) = events.proximity_events.pop() {
-        let mut storage_building: Option<StorageBuilding> = None;
-        let mut hauler: Option<Hauler> = None;
-        let (entity1, entity2) =
-            get_entities_from_proximity_event(proximity_event, &mut collider_set);
-        println!(
-            "Stockpile Sensors: Entities = 1: {} 2: {}",
-            entity1, entity2
-        );
-        if let Ok(stockpile_result) = warehouse_query.get_mut(Entity::from_bits(entity1)) {
-            match storage_building {
-                None => storage_building = Some(stockpile_result.clone()),
-                _ => (),
-            }
-        }
-        if let Ok(stockpile_result) = warehouse_query.get_mut(Entity::from_bits(entity2)) {
-            match storage_building {
-                None => storage_building = Some(stockpile_result.clone()),
-                _ => (),
-            }
-        }
-        if let Ok(hauler_result) = hauler_query.get_mut(Entity::from_bits(entity1)) {
-            match hauler {
-                None => hauler = Some(*hauler_result),
-                _ => (),
-            }
-        }
-        if let Ok(hauler_result) = hauler_query.get_mut(Entity::from_bits(entity2)) {
-            match hauler {
-                None => hauler = Some(*hauler_result),
-                _ => (),
-            }
-        }
-        if !storage_building.is_none() {
-            if !hauler.is_none() {
-                storage_building.unwrap().on_proximity_event(
-                    &mut global_storage,
-                    proximity_event.new_status,
-                    &mut hauler.unwrap(),
-                );
-            } else {
-                println!("Stockpile Sensors: No match, hauler is none");
-            }
-        } else {
-            println!("Stockpile Sensors: No match, stockpile is none");
-        }
-    }
-}
+// #[derive(Debug, Eq, PartialEq)]
+// enum PossibleEntities {
+//     Hauler,
+//     Storage,
+//     None,
+// }
+
+// pub fn sys_storage_sensors(
+//     events: Res<EventQueue>,
+//     mut global_storage: ResMut<GlobalStorage>,
+//     mut collider_set: ResMut<ColliderSet>,
+//     mut storage_query: Query<&mut Stockpile>,
+//     mut hauler_query: Query<&mut Hauler>,
+// ) {
+//     println!("Storage: Detecting!");
+//     while let Ok(proximity_event) = events.proximity_events.pop() {
+//         println!("Storage: Event!");
+//         let (entity1, entity2) =
+//             get_entities_from_proximity_event(proximity_event, &mut collider_set);
+//         let mut storage: Option<Mut<Stockpile>> = None;
+//         let mut hauler: Option<Mut<Hauler>> = None;
+//         let mut entity1_type: PossibleEntities = PossibleEntities::None;
+//         let mut entity2_type: PossibleEntities = PossibleEntities::None;
+//         if let Ok(_result) = storage_query.get_mut(Entity::from_bits(entity1)) {
+//             entity1_type = PossibleEntities::Storage;
+//         } else if let Ok(_result) = hauler_query.get_mut(Entity::from_bits(entity1)) {
+//             entity1_type = PossibleEntities::Hauler;
+//         }
+//         if let Ok(_result) = storage_query.get_mut(Entity::from_bits(entity2)) {
+//             entity2_type = PossibleEntities::Storage;
+//         } else if let Ok(_result) = hauler_query.get_mut(Entity::from_bits(entity2)) {
+//             entity2_type = PossibleEntities::Hauler;
+//         }
+
+//         match entity1_type {
+//             PossibleEntities::Hauler => {
+//                 hauler = Some(hauler_query.get_mut(Entity::from_bits(entity1)).unwrap())
+//             }
+//             PossibleEntities::Storage => {
+//                 storage = Some(storage_query.get_mut(Entity::from_bits(entity1)).unwrap())
+//             }
+//             PossibleEntities::None => {}
+//         }
+//         match entity2_type {
+//             PossibleEntities::Hauler => {
+//                 hauler = Some(hauler_query.get_mut(Entity::from_bits(entity2)).unwrap())
+//             }
+//             PossibleEntities::Storage => {
+//                 storage = Some(storage_query.get_mut(Entity::from_bits(entity2)).unwrap())
+//             }
+//             PossibleEntities::None => {}
+//         }
+
+//         let hauler_and_storage_present = !hauler.is_none() && !storage.is_none();
+
+//         if hauler_and_storage_present {
+//             &mut storage.unwrap().on_proximity_event(
+//                 &mut global_storage,
+//                 proximity_event.new_status,
+//                 &mut hauler.unwrap(),
+//             );
+//         }
+//     }
+// }

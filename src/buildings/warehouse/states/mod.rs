@@ -59,9 +59,7 @@ pub fn sys_run_warehouse_states(
                 &mut rb_set,
                 rb_handle,
             ),
-            WarehouseStates::Construction => {
-                state_warehouse_construction(&time, warehouse, &camera_data, &mut rb_set, rb_handle)
-            }
+            WarehouseStates::Construction => state_warehouse_construction(&time, warehouse),
             WarehouseStates::Idle => {
                 state_warehouse_idle(&asset_server, &mut materials, warehouse, material)
             }

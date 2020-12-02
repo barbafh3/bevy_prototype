@@ -1,7 +1,7 @@
 pub mod states;
 
 use self::states::HaulerStates;
-use super::{get_new_position, normalize, run_movement_tick, IdleMovement};
+use super::{get_new_position, normalize, run_movement_tick, IdleMovement, VillagerMovement};
 use crate::{
     constants::{enums::GameResources, enums::Jobs},
     get_idle_point,
@@ -15,20 +15,17 @@ use bevy_rapier2d::{
     na::Vector2, physics::RigidBodyHandleComponent, rapier::dynamics::RigidBodySet,
 };
 
-pub struct HaulerFinished {
-    task: Entity,
-    hauler: Entity,
-    amount_delivered: i32,
-}
+// pub struct HaulerFinished {
+//     task: Entity,
+//     hauler: Entity,
+//     amount_delivered: i32,
+// }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, PartialEq)]
 pub struct Hauler {
     villager_type: Jobs,
     pub state: HaulerStates,
-    pub speed: f32,
-    pub base_movement_tick: f32,
-    pub movement_tick: f32,
-    pub movement_radius: f32,
+    pub movement: VillagerMovement,
     pub movement_target: Vec3,
     pub capacity: i32,
     is_idle: bool,
@@ -44,10 +41,12 @@ impl Hauler {
         Hauler {
             villager_type: Jobs::Hauler,
             state: HaulerStates::Idle,
-            speed: speed,
-            base_movement_tick,
-            movement_tick: 0.0,
-            movement_radius,
+            movement: VillagerMovement {
+                speed: speed,
+                base_tick: base_movement_tick,
+                tick: 0.0,
+                radius: movement_radius,
+            },
             movement_target: Vec3::new(0.0, 0.0, 0.0),
             capacity: 0,
             is_idle: true,
@@ -72,10 +71,7 @@ impl Hauler {
     }
 
     pub fn take_resources(&mut self, amount: i32) {
-        println!("Hauler: Resources taken: {}", amount.clone());
         self.capacity = amount;
-        println!("Hauler: Amount stored: {}", self.capacity.clone());
-        println!("Hauler: After taking resources {:?}", &self);
     }
 }
 
@@ -89,21 +85,22 @@ impl IdleMovement for Hauler {
     ) {
         let rb_index = rb_handle.handle();
         let rb = rb_set.get_mut(rb_index).unwrap();
-        self.movement_tick = run_movement_tick(self, delta);
-        let can_change_target = self.movement_tick <= 0.0;
+        self.movement.tick = run_movement_tick(self, delta);
+        let can_change_target = self.movement.tick <= 0.0;
         if can_change_target {
             self.movement_target = get_new_position(
                 get_idle_point().x(),
                 get_idle_point().y(),
-                self.movement_radius.clone(),
+                self.movement.radius.clone(),
             );
-            self.movement_tick = self.base_movement_tick.clone();
+            self.movement.tick = self.movement.base_tick.clone();
         }
+
         let target_vector = self.movement_target - transform.translation;
         let is_far_enough = target_vector.x().abs() > 2.0 && target_vector.y().abs() > 2.0;
         if is_far_enough {
             let direction = normalize(target_vector);
-            rb.set_linvel(direction * self.speed, true);
+            rb.set_linvel(direction * self.movement.speed, true);
         } else {
             rb.set_linvel(Vector2::new(0.0, 0.0), true);
         }

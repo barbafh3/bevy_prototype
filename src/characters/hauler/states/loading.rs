@@ -24,11 +24,13 @@ pub fn state_hauler_loading(
         hauler.is_idle = false;
     }
     let target_transform = origin_query.get(hauler.resource_origin.unwrap()).unwrap();
-    println!("Hauler: {:?}", &hauler);
     if hauler.capacity <= 0 {
-        let vector = target_transform.translation - transform.translation;
-        let direction = normalize(vector);
-        rb.set_linvel(direction * hauler.speed, true);
+        let target_vector = target_transform.translation - transform.translation;
+        let is_far_enough = target_vector.x().abs() > 2.0 && target_vector.y().abs() > 2.0;
+        if is_far_enough {
+            let direction = normalize(target_vector);
+            rb.set_linvel(direction * hauler.movement.speed, true);
+        }
     } else {
         rb.set_linvel(Vector2::new(0.0, 0.0), true);
         hauler.resource_origin = None;

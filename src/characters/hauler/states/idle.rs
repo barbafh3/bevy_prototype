@@ -8,6 +8,8 @@ use bevy::{
 };
 use bevy_rapier2d::{physics::RigidBodyHandleComponent, rapier::dynamics::RigidBodySet};
 
+use super::HaulerStates;
+
 pub fn state_hauler_idle(
     delta: f32,
     commands: &mut Commands,
@@ -23,7 +25,6 @@ pub fn state_hauler_idle(
         hauler.is_idle = true;
     }
     if hauler.amount_requested > 0 {
-        println!("Hauler: State changed to Loading");
-        hauler.state = super::HaulerStates::Loading;
+        hauler.state = HaulerStates::Loading;
     }
 }

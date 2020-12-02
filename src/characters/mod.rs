@@ -1,5 +1,5 @@
+pub mod builder;
 pub mod hauler;
-pub mod player;
 pub mod villager;
 
 use self::hauler::Hauler;
@@ -12,6 +12,14 @@ use bevy_rapier2d::{
     na::Vector2, physics::RigidBodyHandleComponent, rapier::dynamics::RigidBodySet,
 };
 use rand::*;
+
+#[derive(Debug, PartialEq)]
+pub struct VillagerMovement {
+    pub speed: f32,
+    pub base_tick: f32,
+    pub tick: f32,
+    pub radius: f32,
+}
 
 pub trait IdleMovement {
     fn idle_move(
@@ -48,9 +56,9 @@ pub fn get_new_position(x: f32, y: f32, radius: f32) -> Vec3 {
 }
 
 pub fn run_movement_tick(hauler: &mut Hauler, delta: f32) -> f32 {
-    if hauler.movement_tick > 0.0 {
-        return hauler.movement_tick - delta;
+    if hauler.movement.tick > 0.0 {
+        return hauler.movement.tick - delta;
     } else {
-        return hauler.movement_tick;
+        return hauler.movement.tick;
     }
 }

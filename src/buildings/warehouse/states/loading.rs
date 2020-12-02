@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::{
     buildings::warehouse::Warehouse,
     managers::tasks::{haul::Haul, GameTask},
@@ -12,6 +10,7 @@ pub fn state_warehouse_loading(
     entity: &Entity,
 ) {
     if has_finished_loading(&warehouse) {
+        println!("Warehouse: Finished loading materials");
         warehouse.state = super::WarehouseStates::Construction;
     } else if !warehouse.has_requested_resources {
         create_haul_tasks(commands, &mut warehouse, entity);
@@ -20,12 +19,10 @@ pub fn state_warehouse_loading(
 }
 
 pub(crate) fn has_finished_loading(warehouse: &Mut<Warehouse>) -> bool {
-    let mut finished_loading: bool = false;
+    let mut finished_loading: bool = true;
     for (_, amount) in warehouse.required_resources.iter() {
-        if *amount <= 0 {
-            finished_loading = true;
-        } else {
-            finished_loading = false
+        if amount.clone() > 0 {
+            finished_loading = false;
         }
     }
     return finished_loading;

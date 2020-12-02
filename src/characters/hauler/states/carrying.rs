@@ -13,18 +13,17 @@ pub fn state_hauler_carrying(
     destination_query: &Query<&Transform>,
 ) {
     let rb_index = rb_handle.handle();
-    let mut rb = rb_set.get_mut(rb_index).unwrap();
+    let rb = rb_set.get_mut(rb_index).unwrap();
     let target_transform = destination_query
         .get(hauler.resource_destination.unwrap())
         .unwrap();
     if hauler.capacity > 0 {
         let vector = target_transform.translation - transform.translation;
         let direction = normalize(vector);
-        rb.set_linvel(direction * hauler.speed, true);
+        rb.set_linvel(direction * hauler.movement.speed, true);
     } else {
         hauler.resource_destination = None;
         hauler.amount_requested = 0;
-        println!("Hauler: State changed to Idle");
         hauler.state = super::HaulerStates::Idle;
     }
 }

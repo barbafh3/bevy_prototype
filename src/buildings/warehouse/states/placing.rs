@@ -22,7 +22,7 @@ pub fn state_placing_warehouse(
     rb_handle: Mut<RigidBodyHandleComponent>,
 ) {
     let rb_index = rb_handle.handle();
-    let mut rb = rb_set.get_mut(rb_index).unwrap();
+    let rb = rb_set.get_mut(rb_index).unwrap();
     rb.set_position(
         Isometry::new(
             Vector2::new(camera_data.position.x(), camera_data.position.y()),
@@ -35,6 +35,7 @@ pub fn state_placing_warehouse(
         current_building.entity = None;
     }
     if mouse_input.just_released(MouseButton::Left) {
+        println!("Warehouse: Placed");
         warehouse.state = WarehouseStates::Loading;
         current_building.entity = None;
     }
