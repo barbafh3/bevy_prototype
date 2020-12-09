@@ -5,7 +5,7 @@ use bevy::{
 };
 use bevy_rapier2d::{physics::RigidBodyHandleComponent, rapier::dynamics::RigidBodySet};
 
-use crate::buildings::{stockpile::Stockpile, warehouse::Warehouse};
+use crate::buildings::{construction::Construction, stockpile::Stockpile, warehouse::Warehouse};
 
 use self::{idle::state_builder_idle, working::state_builder_working};
 
@@ -30,13 +30,28 @@ pub fn sys_run_builder_states(
         &Transform,
         &mut RigidBodyHandleComponent,
     )>,
-    transform_query: Query<&Transform>,
-    mut query_set: QuerySet<(Query<&mut Warehouse>, Query<&mut Stockpile>)>,
+    mut construction_query: Query<&mut Construction>,
 ) {
     for (entity, mut builder, transform, rb_handle) in query.iter_mut() {
         match builder.state {
-            BuilderStates::Idle => state_builder_idle(),
-            BuilderStates::Working => state_builder_working(&mut builder, &mut query_set),
+            BuilderStates::Idle => state_builder_idle(
+                time.delta_seconds,
+                &mut commands,
+                entity,
+                &mut builder,
+                &transform,
+                &mut rb_set,
+                rb_handle,
+            ),
+            BuilderStates::Working => state_builder_working(
+                entity,
+                &mut commands,
+                &mut builder,
+                &transform,
+                &mut rb_set,
+                rb_handle,
+                &mut construction_query,
+            ),
         }
     }
 }

@@ -54,7 +54,6 @@ impl Warehouse {
     ) {
         match self.state {
             WarehouseStates::Active => self.check_hauler_state(global_storage, hauler),
-            _ => (),
         }
     }
 

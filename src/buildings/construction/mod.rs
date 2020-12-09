@@ -1,23 +1,17 @@
 pub mod states;
 
-use super::{
-    storage::{StorageInsert, StorageWithdraw},
-    warehouse::Warehouse,
-    woodcuttershut::WoodcuttersHut,
-};
 use crate::{
     characters::hauler::{states::HaulerStates, Hauler},
-    constants::{enums::GameResources, tasks::HAULER_CAPACITY},
-    managers::storage::GlobalStorage,
+    constants::enums::GameResources,
 };
-use bevy::ecs::{Mut, ResMut};
+use bevy::ecs::Mut;
 use bevy_rapier2d::rapier::geometry::Proximity;
 use enum_map::EnumMap;
 
 pub enum ConstructionTypes {
     WarehouseParams(i32),
     // SmallHouse(SmallHouse),
-    WoodcuttersHutParams(i32, i32),
+    // WoodcuttersHutParams(i32, i32),
     // Sawmill(Sawmill),
 }
 

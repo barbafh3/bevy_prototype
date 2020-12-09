@@ -1,18 +1,14 @@
-use crate::{
-    buildings::construction::Construction, characters::builder::Builder,
-    managers::villagers::IdleVillager,
-};
+use crate::{characters::builder::Builder, managers::villagers::IdleVillager};
 
 use bevy::{
     core::Time,
-    ecs::{Entity, Mut, Query, Res},
-    math::Vec2,
+    ecs::{Entity, Query, Res},
+    math::Vec3,
 };
-use bevy_rapier2d::na::Vector2;
 
 pub struct BuilderRequest {
     pub amount: i32,
-    pub position: Vec2,
+    pub position: Vec3,
     pub construction: Entity,
 }
 

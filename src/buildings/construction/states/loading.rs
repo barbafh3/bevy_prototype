@@ -1,19 +1,31 @@
 use crate::{
     buildings::construction::{Construction, ConstructionStates},
-    managers::tasks::{haul::Haul, GameTask},
+    constants::tasks::MAXIMUM_BUILDERS,
+    managers::tasks::{build::BuilderRequest, haul::Haul, GameTask},
 };
-use bevy::ecs::{Commands, Entity, Mut};
+use bevy::{
+    ecs::{Commands, Entity, Mut, ResMut},
+    math::{Vec2, Vec3},
+    prelude::{Events, Transform},
+};
 
 pub fn state_loading_construction(
     commands: &mut Commands,
+    transform: &Transform,
+    events: &mut ResMut<Events<BuilderRequest>>,
     mut construction: Mut<Construction>,
-    entity: &Entity,
+    entity: Entity,
 ) {
     if has_finished_loading(&construction) {
         println!("Warehouse: Finished loading materials");
+        events.send(BuilderRequest {
+            amount: MAXIMUM_BUILDERS,
+            construction: entity,
+            position: Vec3::new(transform.translation.x(), transform.translation.y(), 100.0),
+        });
         construction.state = ConstructionStates::Construction;
     } else if !construction.has_requested_resources {
-        create_haul_tasks(commands, &mut construction, entity);
+        create_haul_tasks(commands, &mut construction, &entity);
         construction.has_requested_resources = true;
     }
 }

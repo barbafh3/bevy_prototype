@@ -1,7 +1,7 @@
 pub mod states;
 
 use self::states::HaulerStates;
-use super::{get_new_position, normalize, run_movement_tick, IdleMovement, VillagerMovement};
+use super::{get_new_position, normalize, IdleMovement, VillagerMovement};
 use crate::{
     constants::{enums::GameResources, enums::Jobs},
     get_idle_point,
@@ -85,7 +85,7 @@ impl IdleMovement for Hauler {
     ) {
         let rb_index = rb_handle.handle();
         let rb = rb_set.get_mut(rb_index).unwrap();
-        self.movement.tick = run_movement_tick(self, delta);
+        self.movement.tick = run_hauler_movement_tick(self, delta);
         let can_change_target = self.movement.tick <= 0.0;
         if can_change_target {
             self.movement_target = get_new_position(
@@ -104,5 +104,13 @@ impl IdleMovement for Hauler {
         } else {
             rb.set_linvel(Vector2::new(0.0, 0.0), true);
         }
+    }
+}
+
+pub fn run_hauler_movement_tick(hauler: &mut Hauler, delta: f32) -> f32 {
+    if hauler.movement.tick > 0.0 {
+        return hauler.movement.tick - delta;
+    } else {
+        return hauler.movement.tick;
     }
 }

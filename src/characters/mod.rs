@@ -54,11 +54,3 @@ pub fn get_new_position(x: f32, y: f32, radius: f32) -> Vec3 {
     let random_y = thread_rng().gen_range(y - radius, y + radius);
     Vec3::new(random_x, random_y, 0.0)
 }
-
-pub fn run_movement_tick(hauler: &mut Hauler, delta: f32) -> f32 {
-    if hauler.movement.tick > 0.0 {
-        return hauler.movement.tick - delta;
-    } else {
-        return hauler.movement.tick;
-    }
-}

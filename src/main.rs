@@ -19,14 +19,17 @@ use bevy_tilemap::{
 };
 use buildings::{
     collision_detection::sys_filter_collision_events,
-    construction::states::sys_run_construction_states,
+    construction::states::{construction::sys_builder_request_event, sys_run_construction_states},
     stockpile::{sys_update_stockpile_storage, Stockpile},
     sys_spawn_building,
     warehouse::states::sys_run_warehouse_states,
     CurrentBuilding,
 };
 use camera::{sys_cursor_position, CameraData, CustomCursorState};
-use characters::hauler::{states::sys_run_hauler_state, Hauler};
+use characters::{
+    builder::{states::sys_run_builder_states, Builder},
+    hauler::{states::sys_run_hauler_state, Hauler},
+};
 use constants::enums::{get_resources_list, GameResources};
 use managers::{
     storage::GlobalStorage,
@@ -112,6 +115,24 @@ fn startup(
         .user_data(hauler.to_bits() as u128);
     commands.insert(hauler, (rigid_body2, collider2));
 
+    let hauler_texture = asset_server.load("spearman.png");
+    let hauler = commands
+        .spawn(SpriteComponents {
+            material: materials.add(hauler_texture.into()),
+            transform: Transform::from_translation(Vec3::new(-10.0, -10.0, 100.0)),
+            sprite: Sprite::new(Vec2::new(16.0, 16.0) * 1.5),
+            ..Default::default()
+        })
+        .with(Builder::new(1.0, 50.0, 3.0, 20.0))
+        .with(IdleVillager)
+        .current_entity()
+        .unwrap();
+    let rigid_body2 = RigidBodyBuilder::new_dynamic();
+    let collider2 = ColliderBuilder::cuboid(5.0, 5.0)
+        .sensor(true)
+        .user_data(hauler.to_bits() as u128);
+    commands.insert(hauler, (rigid_body2, collider2));
+
     // let rigid_body = RigidBodyBuilder::new_dynamic()
     //     .translation(0.0, 20.0)
     //     .can_sleep(false);
@@ -174,6 +195,7 @@ fn tilemap_systems(app: &mut AppBuilder) {
 
 fn building_systems(app: &mut AppBuilder) {
     app.add_system(sys_spawn_building.system());
+    app.add_system(sys_builder_request_event.system());
     app.add_system(sys_run_construction_states.system());
     app.add_system(sys_run_warehouse_states.system());
     app.add_system(sys_filter_collision_events.system());
@@ -181,8 +203,9 @@ fn building_systems(app: &mut AppBuilder) {
 }
 
 fn villager_systems(app: &mut AppBuilder) {
-    app.add_system(sys_run_hauler_state.system())
-        .add_system(sys_new_villager_requests.system());
+    app.add_system(sys_run_hauler_state.system());
+    app.add_system(sys_new_villager_requests.system());
+    app.add_system(sys_run_builder_states.system());
 }
 
 pub fn get_idle_point() -> Vec2 {
