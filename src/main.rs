@@ -19,6 +19,7 @@ use bevy_tilemap::{
 };
 use buildings::{
     collision_detection::sys_filter_collision_events,
+    construction::states::sys_run_construction_states,
     stockpile::{sys_update_stockpile_storage, Stockpile},
     sys_spawn_building,
     warehouse::states::sys_run_warehouse_states,
@@ -29,10 +30,14 @@ use characters::hauler::{states::sys_run_hauler_state, Hauler};
 use constants::enums::{get_resources_list, GameResources};
 use managers::{
     storage::GlobalStorage,
-    tasks::haul::{sys_close_haul_tasks, sys_run_haul_tasks},
+    tasks::{
+        build::BuilderRequest,
+        haul::{sys_close_haul_tasks, sys_run_haul_tasks},
+        TaskFinished,
+    },
     tilemap::{build_tilemap, load_atlas, MapState, TileSpriteHandles, WorldTile},
-    villagers::sys_new_villager_requests,
     villagers::IdleVillager,
+    villagers::{sys_new_villager_requests, SpawnRequest},
 };
 
 fn startup(
@@ -147,11 +152,11 @@ fn load_systems(app: &mut AppBuilder) {
     villager_systems(app);
 }
 
-// fn load_events(app: &mut AppBuilder) {
-//     app.add_event::<HaulerFinished>()
-//         .add_event::<SpawnRequest>()
-//         .add_event::<TaskFinished>();
-// }
+fn load_events(app: &mut AppBuilder) {
+    app.add_event::<BuilderRequest>();
+    app.add_event::<SpawnRequest>();
+    app.add_event::<TaskFinished>();
+}
 
 fn core_systems(app: &mut AppBuilder) {
     app.add_system(sys_cursor_position.system());
@@ -169,6 +174,7 @@ fn tilemap_systems(app: &mut AppBuilder) {
 
 fn building_systems(app: &mut AppBuilder) {
     app.add_system(sys_spawn_building.system());
+    app.add_system(sys_run_construction_states.system());
     app.add_system(sys_run_warehouse_states.system());
     app.add_system(sys_filter_collision_events.system());
     app.add_system(sys_update_stockpile_storage.system());
@@ -195,7 +201,7 @@ pub fn get_idle_point() -> Vec2 {
 
 fn main() {
     let mut app = App::build();
-    // load_events(&mut app);
+    load_events(&mut app);
     load_resources(&mut app);
     load_plugins(&mut app);
     load_startup_systems(&mut app);

@@ -1,12 +1,8 @@
-pub mod construction;
-pub mod idle;
-pub mod loading;
-pub mod placing;
+pub mod active;
+pub mod inactive;
 
-use self::{
-    construction::state_warehouse_construction, idle::state_warehouse_idle,
-    loading::state_warehouse_loading, placing::state_placing_warehouse,
-};
+use self::{active::state_warehouse_active, inactive::state_warehouse_inactive};
+
 use super::Warehouse;
 use crate::{buildings::CurrentBuilding, camera::CameraData};
 use bevy::{
@@ -26,10 +22,8 @@ use bevy_rapier2d::{physics::RigidBodyHandleComponent, rapier::dynamics::RigidBo
 
 #[derive(Eq, PartialEq, Copy, Clone)]
 pub enum WarehouseStates {
-    Placing,
-    Loading,
-    Construction,
-    Idle,
+    Active,
+    Inactive,
 }
 
 pub fn sys_run_warehouse_states(
@@ -50,20 +44,10 @@ pub fn sys_run_warehouse_states(
 ) {
     for (entity, mut warehouse, material, rb_handle) in query.iter_mut() {
         match warehouse.state {
-            WarehouseStates::Placing => state_placing_warehouse(
-                &mut commands,
-                &mouse_input,
-                &mut current_building,
-                &mut warehouse,
-                &camera_data,
-                &mut rb_set,
-                rb_handle,
-            ),
-            WarehouseStates::Construction => state_warehouse_construction(&time, warehouse),
-            WarehouseStates::Idle => {
-                state_warehouse_idle(&asset_server, &mut materials, warehouse, material)
+            WarehouseStates::Active => {
+                state_warehouse_active(&asset_server, &mut materials, warehouse, material)
             }
-            WarehouseStates::Loading => state_warehouse_loading(&mut commands, warehouse, &entity),
+            WarehouseStates::Inactive => state_warehouse_inactive(),
         }
     }
 }

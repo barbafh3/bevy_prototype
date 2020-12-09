@@ -1,26 +1,26 @@
 use crate::{
-    buildings::warehouse::Warehouse,
+    buildings::construction::{Construction, ConstructionStates},
     managers::tasks::{haul::Haul, GameTask},
 };
 use bevy::ecs::{Commands, Entity, Mut};
 
-pub fn state_warehouse_loading(
+pub fn state_loading_construction(
     commands: &mut Commands,
-    mut warehouse: Mut<Warehouse>,
+    mut construction: Mut<Construction>,
     entity: &Entity,
 ) {
-    if has_finished_loading(&warehouse) {
+    if has_finished_loading(&construction) {
         println!("Warehouse: Finished loading materials");
-        warehouse.state = super::WarehouseStates::Construction;
-    } else if !warehouse.has_requested_resources {
-        create_haul_tasks(commands, &mut warehouse, entity);
-        warehouse.has_requested_resources = true;
+        construction.state = ConstructionStates::Construction;
+    } else if !construction.has_requested_resources {
+        create_haul_tasks(commands, &mut construction, entity);
+        construction.has_requested_resources = true;
     }
 }
 
-pub(crate) fn has_finished_loading(warehouse: &Mut<Warehouse>) -> bool {
+pub(crate) fn has_finished_loading(construction: &Mut<Construction>) -> bool {
     let mut finished_loading: bool = true;
-    for (_, amount) in warehouse.required_resources.iter() {
+    for (_, amount) in construction.required_resources.iter() {
         if amount.clone() > 0 {
             finished_loading = false;
         }
@@ -30,10 +30,10 @@ pub(crate) fn has_finished_loading(warehouse: &Mut<Warehouse>) -> bool {
 
 pub(crate) fn create_haul_tasks(
     commands: &mut Commands,
-    warehouse: &mut Mut<Warehouse>,
+    construction: &mut Mut<Construction>,
     entity: &Entity,
 ) {
-    for (resource, amount) in warehouse.required_resources.iter() {
+    for (resource, amount) in construction.required_resources.iter() {
         if *amount > 0 {
             let haul: Haul = Haul::new(
                 // 1.0,

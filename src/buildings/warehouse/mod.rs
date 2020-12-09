@@ -13,33 +13,24 @@ use crate::{
 };
 use bevy::ecs::{Mut, ResMut};
 use bevy_rapier2d::rapier::geometry::Proximity;
-use enum_map::EnumMap;
 
 pub struct Warehouse {
     pub state: WarehouseStates,
     pub storage_data: StorageData,
-    pub required_resources: EnumMap<GameResources, i32>,
-    pub construction_time: f32,
-    pub warehouse_sprite_added: bool,
-    pub is_position_set: bool,
-    pub has_requested_resources: bool,
+    pub is_sprite_set: bool,
 }
 
 impl Warehouse {
-    pub fn new(max_capacity: i32, required_resources: EnumMap<GameResources, i32>) -> Warehouse {
+    pub fn new(max_capacity: i32) -> Warehouse {
         let warehouse = Warehouse {
-            state: WarehouseStates::Placing,
+            state: WarehouseStates::Active,
             storage_data: StorageData::new(
                 max_capacity,
                 get_resources_list(),
                 get_resources_list(),
                 get_resources_list(),
             ),
-            required_resources,
-            construction_time: 10.0,
-            warehouse_sprite_added: false,
-            is_position_set: false,
-            has_requested_resources: false,
+            is_sprite_set: false,
         };
         return warehouse;
     }
@@ -62,8 +53,7 @@ impl Warehouse {
         hauler: &mut Mut<Hauler>,
     ) {
         match self.state {
-            WarehouseStates::Loading => self.receive_resources(global_storage, hauler),
-            WarehouseStates::Idle => self.check_hauler_state(global_storage, hauler),
+            WarehouseStates::Active => self.check_hauler_state(global_storage, hauler),
             _ => (),
         }
     }
@@ -75,27 +65,8 @@ impl Warehouse {
     ) {
         match hauler.state {
             HaulerStates::Loading => self.deliver_resources(global_storage, hauler),
-            HaulerStates::Carrying => self.receive_resources(global_storage, hauler),
+            HaulerStates::Carrying => self.take_resources(),
             _ => (),
-        }
-    }
-
-    fn receive_resources(
-        &mut self,
-        global_storage: &mut ResMut<GlobalStorage>,
-        hauler: &mut Mut<Hauler>,
-    ) {
-        let adding_result = self.add_to_storage(
-            global_storage,
-            hauler.current_resource.unwrap(),
-            hauler.capacity,
-        );
-        if let Some(remainder) = adding_result {
-            if self.required_resources[hauler.current_resource.unwrap()] > 0 {
-                self.required_resources[hauler.current_resource.unwrap()] -=
-                    hauler.capacity - remainder;
-            }
-            hauler.deliver_resource();
         }
     }
 
@@ -118,6 +89,8 @@ impl Warehouse {
             }
         }
     }
+
+    fn take_resources(&mut self) {}
 }
 
 impl StorageInsert for Warehouse {

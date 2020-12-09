@@ -1,9 +1,8 @@
 pub mod states;
 
+use super::VillagerMovement;
 use bevy::ecs::Entity;
 use states::BuilderStates;
-
-use super::VillagerMovement;
 
 pub struct Builder {
     pub state: BuilderStates,

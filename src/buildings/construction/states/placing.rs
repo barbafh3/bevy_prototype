@@ -1,5 +1,10 @@
-use super::WarehouseStates;
-use crate::{buildings::warehouse::Warehouse, buildings::CurrentBuilding, camera::CameraData};
+use crate::{
+    buildings::{
+        construction::{Construction, ConstructionStates},
+        CurrentBuilding,
+    },
+    camera::CameraData,
+};
 use bevy::{
     ecs::Mut,
     ecs::ResMut,
@@ -12,11 +17,11 @@ use bevy_rapier2d::{
     rapier::math::Isometry,
 };
 
-pub fn state_placing_warehouse(
+pub fn state_placing_construction(
     commands: &mut Commands,
     mouse_input: &Res<Input<MouseButton>>,
     current_building: &mut ResMut<CurrentBuilding>,
-    warehouse: &mut Mut<Warehouse>,
+    construction: &mut Mut<Construction>,
     camera_data: &Res<CameraData>,
     rb_set: &mut ResMut<RigidBodySet>,
     rb_handle: Mut<RigidBodyHandleComponent>,
@@ -36,7 +41,7 @@ pub fn state_placing_warehouse(
     }
     if mouse_input.just_released(MouseButton::Left) {
         println!("Warehouse: Placed");
-        warehouse.state = WarehouseStates::Loading;
+        construction.state = ConstructionStates::Loading;
         current_building.entity = None;
     }
 }
