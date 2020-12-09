@@ -103,13 +103,15 @@ impl StorageInsert for Warehouse {
         let total_amount_after_adding = self.storage_data.storage[resource] + amount;
         if total_amount_after_adding <= self.storage_data.max_capacity {
             self.storage_data.storage[resource] += amount;
+            global_storage.update_global_storage(resource, amount);
             Some(0)
         } else {
             let amount_possible_to_add =
                 amount - (total_amount_after_adding - self.storage_data.max_capacity);
             let amount_remaining_on_hauler = amount - amount_possible_to_add;
             if amount_possible_to_add > 0 {
-                self.storage_data.storage[resource] += amount;
+                self.storage_data.storage[resource] += amount_possible_to_add;
+                global_storage.update_global_storage(resource, amount_possible_to_add);
                 Some(amount_remaining_on_hauler)
             } else {
                 None

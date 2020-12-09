@@ -54,7 +54,7 @@ pub fn sys_builder_request_event(
         let counter = event.amount;
         for mut builder in builder_query.iter_mut() {
             if counter > 0 {
-                builder.requested_construction = event.construction;
+                builder.requested_construction = Some(event.construction);
             } else {
                 break;
             }
