@@ -1,4 +1,4 @@
 pub mod enums;
 pub mod tasks;
 
-const MAXIMUM_BUILDERS: i32 = 4;
+pub const OUTDOORS_IDLE_RADIUS: f32 = 10.0;

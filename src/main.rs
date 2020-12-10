@@ -30,7 +30,10 @@ use characters::{
     builder::{states::sys_run_builder_states, Builder},
     hauler::{states::sys_run_hauler_state, Hauler},
 };
-use constants::enums::{get_resources_list, GameResources};
+use constants::{
+    enums::{get_resources_list, GameResources},
+    OUTDOORS_IDLE_RADIUS,
+};
 use managers::{
     storage::GlobalStorage,
     tasks::{
@@ -115,6 +118,24 @@ fn startup(
         .user_data(hauler.to_bits() as u128);
     commands.insert(hauler, (rigid_body2, collider2));
 
+    let hauler_texture = asset_server.load("horse.png");
+    let hauler = commands
+        .spawn(SpriteComponents {
+            material: materials.add(hauler_texture.into()),
+            transform: Transform::from_translation(Vec3::new(10.0, 10.0, 100.0)),
+            sprite: Sprite::new(Vec2::new(16.0, 16.0) * 1.5),
+            ..Default::default()
+        })
+        .with(Hauler::new(50.0, 3.0, OUTDOORS_IDLE_RADIUS))
+        .with(IdleVillager)
+        .current_entity()
+        .unwrap();
+    let rigid_body2 = RigidBodyBuilder::new_dynamic();
+    let collider2 = ColliderBuilder::cuboid(5.0, 5.0)
+        .sensor(true)
+        .user_data(hauler.to_bits() as u128);
+    commands.insert(hauler, (rigid_body2, collider2));
+
     let hauler_texture = asset_server.load("spearman.png");
     let hauler = commands
         .spawn(SpriteComponents {
@@ -123,7 +144,7 @@ fn startup(
             sprite: Sprite::new(Vec2::new(16.0, 16.0) * 1.5),
             ..Default::default()
         })
-        .with(Builder::new(1.0, 50.0, 3.0, 20.0))
+        .with(Builder::new(1.0, 50.0, 3.0, OUTDOORS_IDLE_RADIUS))
         .with(IdleVillager)
         .current_entity()
         .unwrap();
@@ -208,8 +229,8 @@ fn villager_systems(app: &mut AppBuilder) {
     app.add_system(sys_run_builder_states.system());
 }
 
-pub fn get_idle_point() -> Vec2 {
-    Vec2::new(100.0, 100.0)
+pub fn get_idle_point() -> Vec3 {
+    Vec3::new(100.0, 100.0, 0.0)
 }
 
 // fn print_events(events: Res<EventQueue>) {

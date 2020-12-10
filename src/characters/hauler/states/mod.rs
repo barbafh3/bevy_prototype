@@ -1,9 +1,11 @@
 pub mod carrying;
+pub mod finished;
 pub mod idle;
 pub mod loading;
 
 use self::{
-    carrying::state_hauler_carrying, idle::state_hauler_idle, loading::state_hauler_loading,
+    carrying::state_hauler_carrying, finished::state_hauler_finished_work, idle::state_hauler_idle,
+    loading::state_hauler_loading,
 };
 use super::Hauler;
 use bevy::{
@@ -18,6 +20,7 @@ pub enum HaulerStates {
     Idle,
     Loading,
     Carrying,
+    Finished,
 }
 
 pub fn sys_run_hauler_state(
@@ -45,8 +48,8 @@ pub fn sys_run_hauler_state(
             ),
             HaulerStates::Loading => {
                 state_hauler_loading(
-                    entity,
                     &mut commands,
+                    entity,
                     &mut hauler,
                     transform,
                     &mut rb_set,
@@ -60,6 +63,14 @@ pub fn sys_run_hauler_state(
                 &mut rb_set,
                 rb_handle,
                 &transform_query,
+            ),
+            HaulerStates::Finished => state_hauler_finished_work(
+                &mut commands,
+                entity,
+                &mut hauler,
+                transform,
+                &mut rb_set,
+                rb_handle,
             ),
         }
     }

@@ -9,7 +9,9 @@ use bevy::{
     prelude::Transform,
 };
 use bevy_rapier2d::{
-    na::Vector2, physics::RigidBodyHandleComponent, rapier::dynamics::RigidBodySet,
+    na::{Vector2, Vector3},
+    physics::RigidBodyHandleComponent,
+    rapier::dynamics::RigidBodySet,
 };
 use rand::*;
 
@@ -31,23 +33,23 @@ pub trait IdleMovement {
     );
 }
 
-pub fn normalize(position: Vec3) -> Vector2<f32> {
-    let mut direction_x: f32 = 0.0;
-    let mut direction_y: f32 = 0.0;
-    if position.x() > 0.0 {
-        direction_x = 1.0;
-    }
-    if position.x() < 0.0 {
-        direction_x = -1.0;
-    }
-    if position.y() > 0.0 {
-        direction_y = 1.0;
-    }
-    if position.y() < 0.0 {
-        direction_y = -1.0;
-    }
-    return Vector2::new(direction_x, direction_y);
-}
+// pub fn normalize(position: Vec3) -> Vector2<f32> {
+//     let mut direction_x: f32 = 0.0;
+//     let mut direction_y: f32 = 0.0;
+//     if position.x() > 0.0 {
+//         direction_x += 1.0;
+//     }
+//     if position.x() < 0.0 {
+//         direction_x += -1.0;
+//     }
+//     if position.y() > 0.0 {
+//         direction_y += 1.0;
+//     }
+//     if position.y() < 0.0 {
+//         direction_y += -1.0;
+//     }
+//     return Vector2::new(direction_x, direction_y);
+// }
 
 pub fn get_new_position(x: f32, y: f32, radius: f32) -> Vec3 {
     let random_x = thread_rng().gen_range(x - radius, x + radius);

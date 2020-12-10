@@ -26,6 +26,9 @@ pub fn state_builder_idle(
         builder.is_idle = true;
     }
     if !builder.requested_construction.is_none() {
+        builder.is_idle = false;
+        commands.remove_one::<IdleVillager>(entity);
+        println!("BuilderIdle: Builder is now working");
         builder.state = BuilderStates::Working;
     }
 }

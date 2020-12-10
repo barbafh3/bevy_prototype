@@ -1,9 +1,11 @@
-use crate::characters::{hauler::Hauler, normalize};
+use crate::characters::hauler::Hauler;
 use bevy::{
     ecs::{Mut, Query, ResMut},
     prelude::Transform,
 };
-use bevy_rapier2d::{physics::RigidBodyHandleComponent, rapier::dynamics::RigidBodySet};
+use bevy_rapier2d::{
+    na::Vector2, physics::RigidBodyHandleComponent, rapier::dynamics::RigidBodySet,
+};
 
 pub fn state_hauler_carrying(
     hauler: &mut Hauler,
@@ -19,11 +21,16 @@ pub fn state_hauler_carrying(
         .unwrap();
     if hauler.capacity > 0 {
         let vector = target_transform.translation - transform.translation;
-        let direction = normalize(vector);
-        rb.set_linvel(direction * hauler.movement.speed, true);
+        let is_far_enough = vector.x().abs() > 2.0 && vector.y().abs() > 2.0;
+        if is_far_enough {
+            let target_vector = Vector2::new(vector.x(), vector.y());
+            let direction = target_vector.normalize();
+            rb.set_linvel(direction * hauler.movement.speed, true);
+        }
     } else {
         hauler.resource_destination = None;
         hauler.amount_requested = 0;
-        hauler.state = super::HaulerStates::Idle;
+        hauler.state = super::HaulerStates::Finished;
+        println!("Hauler finished working");
     }
 }

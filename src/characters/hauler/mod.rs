@@ -1,7 +1,7 @@
 pub mod states;
 
 use self::states::HaulerStates;
-use super::{get_new_position, normalize, IdleMovement, VillagerMovement};
+use super::{get_new_position, IdleMovement, VillagerMovement};
 use crate::{
     constants::{enums::GameResources, enums::Jobs},
     get_idle_point,
@@ -96,10 +96,11 @@ impl IdleMovement for Hauler {
             self.movement.tick = self.movement.base_tick.clone();
         }
 
-        let target_vector = self.movement_target - transform.translation;
-        let is_far_enough = target_vector.x().abs() > 2.0 && target_vector.y().abs() > 2.0;
+        let vector = self.movement_target - transform.translation;
+        let is_far_enough = vector.x().abs() > 2.0 && vector.y().abs() > 2.0;
         if is_far_enough {
-            let direction = normalize(target_vector);
+            let target_vector = Vector2::new(vector.x(), vector.y());
+            let direction = target_vector.normalize();
             rb.set_linvel(direction * self.movement.speed, true);
         } else {
             rb.set_linvel(Vector2::new(0.0, 0.0), true);

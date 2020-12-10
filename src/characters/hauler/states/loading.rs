@@ -6,11 +6,11 @@ use bevy_rapier2d::{
     na::Vector2, physics::RigidBodyHandleComponent, rapier::dynamics::RigidBodySet,
 };
 
-use crate::{characters::hauler::Hauler, characters::normalize, managers::villagers::IdleVillager};
+use crate::{characters::hauler::Hauler, managers::villagers::IdleVillager};
 
 pub fn state_hauler_loading(
-    entity: Entity,
     commands: &mut Commands,
+    entity: Entity,
     hauler: &mut Hauler,
     transform: &Transform,
     rb_set: &mut ResMut<RigidBodySet>,
@@ -23,18 +23,23 @@ pub fn state_hauler_loading(
         commands.remove_one::<IdleVillager>(entity);
         hauler.is_idle = false;
     }
+    println!("HaulerLoading: Moving to storage...");
     let target_transform = origin_query.get(hauler.resource_origin.unwrap()).unwrap();
     if hauler.capacity <= 0 {
-        let target_vector = target_transform.translation - transform.translation;
-        let is_far_enough = target_vector.x().abs() > 2.0 && target_vector.y().abs() > 2.0;
+        let vector = target_transform.translation - transform.translation;
+        let is_far_enough = vector.x().abs() > 2.0 || vector.y().abs() > 2.0;
         if is_far_enough {
-            let direction = normalize(target_vector);
-            rb.set_linvel(direction * hauler.movement.speed, true);
+            let target_vector = Vector2::new(vector.x(), vector.y());
+            let direction = target_vector.normalize();
+            let distance: Vector2<f32> = direction * hauler.movement.speed;
+            rb.set_linvel(distance, true);
+        } else {
+            println!("HaulerLoading: Arrived and waiting for cargo");
         }
     } else {
+        println!("HaulerLoading: Cargo loaded");
         rb.set_linvel(Vector2::new(0.0, 0.0), true);
         hauler.resource_origin = None;
-        println!("Hauler: State changed to Carrying");
         hauler.state = super::HaulerStates::Carrying;
     }
 }

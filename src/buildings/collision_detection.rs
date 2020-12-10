@@ -45,29 +45,23 @@ pub fn sys_filter_collision_events(
         let mut entity1_type: PossibleEntities = PossibleEntities::None;
         let mut entity2_type: PossibleEntities = PossibleEntities::None;
 
-        if let Ok(_result) = hauler_query.get_mut(Entity::from_bits(entity1)) {
-            entity1_type = PossibleEntities::Hauler;
-        } else if let Ok(_result) = builder_query.get_mut(Entity::from_bits(entity1)) {
-            entity1_type = PossibleEntities::Builder;
-        } else if let Ok(_result) = storage_query.get_mut(Entity::from_bits(entity1)) {
-            entity1_type = PossibleEntities::Stockpile;
-        } else if let Ok(_result) = warehouse_query.get_mut(Entity::from_bits(entity1)) {
-            entity1_type = PossibleEntities::Warehouse;
-        } else if let Ok(_result) = construction_query.get_mut(Entity::from_bits(entity1)) {
-            entity1_type = PossibleEntities::Construction;
-        }
+        entity1_type = filter_entity_type(
+            entity1,
+            &mut hauler_query,
+            &mut builder_query,
+            &mut storage_query,
+            &mut warehouse_query,
+            &mut construction_query,
+        );
 
-        if let Ok(_result) = hauler_query.get_mut(Entity::from_bits(entity2)) {
-            entity2_type = PossibleEntities::Hauler;
-        } else if let Ok(_result) = builder_query.get_mut(Entity::from_bits(entity2)) {
-            entity1_type = PossibleEntities::Builder;
-        } else if let Ok(_result) = storage_query.get_mut(Entity::from_bits(entity2)) {
-            entity2_type = PossibleEntities::Stockpile;
-        } else if let Ok(_result) = warehouse_query.get_mut(Entity::from_bits(entity2)) {
-            entity2_type = PossibleEntities::Warehouse;
-        } else if let Ok(_result) = construction_query.get_mut(Entity::from_bits(entity2)) {
-            entity2_type = PossibleEntities::Construction;
-        }
+        entity2_type = filter_entity_type(
+            entity2,
+            &mut hauler_query,
+            &mut builder_query,
+            &mut storage_query,
+            &mut warehouse_query,
+            &mut construction_query,
+        );
 
         match entity1_type {
             PossibleEntities::None => {}
@@ -142,9 +136,44 @@ pub fn sys_filter_collision_events(
         } else if construction_and_builder_present {
             if let Some(mut local_builder) = builder {
                 if let Some((entity, _)) = construction {
-                    local_builder.current_construction = Some(entity);
+                    match proximity_event.new_status {
+                        bevy_rapier2d::rapier::geometry::Proximity::Intersecting => {
+                            local_builder.is_inside_building = true;
+                            local_builder.current_construction = Some(entity);
+                            println!("Collision: Builder entered construction");
+                        }
+                        bevy_rapier2d::rapier::geometry::Proximity::Disjoint => {
+                            local_builder.is_inside_building = false;
+                            local_builder.current_construction = None;
+                            println!("Collision: Builder left construction");
+                        }
+                        _ => {}
+                    }
                 }
             }
         }
+    }
+}
+
+fn filter_entity_type(
+    entity: u64,
+    hauler_query: &mut Query<&mut Hauler>,
+    builder_query: &mut Query<&mut Builder>,
+    storage_query: &mut Query<&mut Stockpile>,
+    warehouse_query: &mut Query<&mut Warehouse>,
+    construction_query: &mut Query<(Entity, &mut Construction)>,
+) -> PossibleEntities {
+    if let Ok(_result) = hauler_query.get_mut(Entity::from_bits(entity)) {
+        PossibleEntities::Hauler
+    } else if let Ok(_result) = builder_query.get_mut(Entity::from_bits(entity)) {
+        PossibleEntities::Builder
+    } else if let Ok(_result) = storage_query.get_mut(Entity::from_bits(entity)) {
+        PossibleEntities::Stockpile
+    } else if let Ok(_result) = warehouse_query.get_mut(Entity::from_bits(entity)) {
+        PossibleEntities::Warehouse
+    } else if let Ok(_result) = construction_query.get_mut(Entity::from_bits(entity)) {
+        PossibleEntities::Construction
+    } else {
+        PossibleEntities::None
     }
 }
