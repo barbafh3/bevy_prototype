@@ -1,5 +1,5 @@
 use crate::{
-    characters::{hauler::Hauler, IdleMovement},
+    characters::hauler::{hauler_idle_move, Hauler},
     managers::villagers::IdleVillager,
 };
 use bevy::{
@@ -19,7 +19,7 @@ pub fn state_hauler_idle(
     rb_set: &mut ResMut<RigidBodySet>,
     rb_handle: Mut<RigidBodyHandleComponent>,
 ) {
-    hauler.idle_move(delta, transform, rb_set, rb_handle);
+    hauler_idle_move(hauler, delta, transform, rb_set, rb_handle);
     if !hauler.is_idle {
         commands.insert_one(entity, IdleVillager);
         hauler.is_idle = true;

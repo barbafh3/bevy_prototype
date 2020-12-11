@@ -27,13 +27,10 @@ use buildings::{
 };
 use camera::{sys_cursor_position, CameraData, CustomCursorState};
 use characters::{
-    builder::{states::sys_run_builder_states, Builder},
-    hauler::{states::sys_run_hauler_state, Hauler},
+    builder::{spawn_new_builder, states::sys_run_builder_states},
+    hauler::{spawn_new_hauler, states::sys_run_hauler_state},
 };
-use constants::{
-    enums::{get_resources_list, GameResources},
-    OUTDOORS_IDLE_RADIUS,
-};
+use constants::enums::{get_resources_list, GameResources};
 use managers::{
     storage::GlobalStorage,
     tasks::{
@@ -42,7 +39,6 @@ use managers::{
         TaskFinished,
     },
     tilemap::{build_tilemap, load_atlas, MapState, TileSpriteHandles, WorldTile},
-    villagers::IdleVillager,
     villagers::{sys_new_villager_requests, SpawnRequest},
 };
 
@@ -100,59 +96,25 @@ fn startup(
         .user_data(stockpile.to_bits() as u128);
     commands.insert(stockpile, (rigid_body, collider));
 
-    let hauler_texture = asset_server.load("horse.png");
-    let hauler = commands
-        .spawn(SpriteComponents {
-            material: materials.add(hauler_texture.into()),
-            transform: Transform::from_translation(Vec3::new(0.0, 0.0, 100.0)),
-            sprite: Sprite::new(Vec2::new(16.0, 16.0) * 1.5),
-            ..Default::default()
-        })
-        .with(Hauler::new(50.0, 3.0, 20.0))
-        .with(IdleVillager)
-        .current_entity()
-        .unwrap();
-    let rigid_body2 = RigidBodyBuilder::new_dynamic();
-    let collider2 = ColliderBuilder::cuboid(5.0, 5.0)
-        .sensor(true)
-        .user_data(hauler.to_bits() as u128);
-    commands.insert(hauler, (rigid_body2, collider2));
+    spawn_new_hauler(
+        &mut commands,
+        &asset_server,
+        &mut materials,
+        Vec3::new(0.0, 0.0, 100.0),
+    );
+    spawn_new_hauler(
+        &mut commands,
+        &asset_server,
+        &mut materials,
+        Vec3::new(10.0, 10.0, 100.0),
+    );
 
-    let hauler_texture = asset_server.load("horse.png");
-    let hauler = commands
-        .spawn(SpriteComponents {
-            material: materials.add(hauler_texture.into()),
-            transform: Transform::from_translation(Vec3::new(10.0, 10.0, 100.0)),
-            sprite: Sprite::new(Vec2::new(16.0, 16.0) * 1.5),
-            ..Default::default()
-        })
-        .with(Hauler::new(50.0, 3.0, OUTDOORS_IDLE_RADIUS))
-        .with(IdleVillager)
-        .current_entity()
-        .unwrap();
-    let rigid_body2 = RigidBodyBuilder::new_dynamic();
-    let collider2 = ColliderBuilder::cuboid(5.0, 5.0)
-        .sensor(true)
-        .user_data(hauler.to_bits() as u128);
-    commands.insert(hauler, (rigid_body2, collider2));
-
-    let hauler_texture = asset_server.load("spearman.png");
-    let hauler = commands
-        .spawn(SpriteComponents {
-            material: materials.add(hauler_texture.into()),
-            transform: Transform::from_translation(Vec3::new(-10.0, -10.0, 100.0)),
-            sprite: Sprite::new(Vec2::new(16.0, 16.0) * 1.5),
-            ..Default::default()
-        })
-        .with(Builder::new(1.0, 50.0, 3.0, OUTDOORS_IDLE_RADIUS))
-        .with(IdleVillager)
-        .current_entity()
-        .unwrap();
-    let rigid_body2 = RigidBodyBuilder::new_dynamic();
-    let collider2 = ColliderBuilder::cuboid(5.0, 5.0)
-        .sensor(true)
-        .user_data(hauler.to_bits() as u128);
-    commands.insert(hauler, (rigid_body2, collider2));
+    spawn_new_builder(
+        &mut commands,
+        &asset_server,
+        &mut materials,
+        Vec3::new(-10.0, -10.0, 100.0),
+    );
 
     // let rigid_body = RigidBodyBuilder::new_dynamic()
     //     .translation(0.0, 20.0)

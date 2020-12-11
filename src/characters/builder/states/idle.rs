@@ -5,7 +5,7 @@ use bevy::{
 use bevy_rapier2d::{physics::RigidBodyHandleComponent, rapier::dynamics::RigidBodySet};
 
 use crate::{
-    characters::{builder::Builder, IdleMovement},
+    characters::builder::{builder_idle_move, Builder},
     managers::villagers::IdleVillager,
 };
 
@@ -20,7 +20,7 @@ pub fn state_builder_idle(
     rb_set: &mut ResMut<RigidBodySet>,
     rb_handle: Mut<RigidBodyHandleComponent>,
 ) {
-    builder.idle_move(delta, transform, rb_set, rb_handle);
+    builder_idle_move(builder, delta, transform, rb_set, rb_handle);
     if !builder.is_idle {
         commands.insert_one(entity, IdleVillager);
         builder.is_idle = true;

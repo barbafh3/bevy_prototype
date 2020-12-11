@@ -58,9 +58,9 @@ impl Stockpile {
                 );
                 if let Some(remainder) = removal_result {
                     if remainder == 0 {
-                        hauler.take_resources(HAULER_CAPACITY);
+                        hauler.capacity = HAULER_CAPACITY;
                     } else {
-                        hauler.take_resources(HAULER_CAPACITY - remainder)
+                        hauler.capacity = HAULER_CAPACITY - remainder;
                     }
                 }
             }

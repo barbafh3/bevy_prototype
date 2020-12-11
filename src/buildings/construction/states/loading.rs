@@ -5,7 +5,7 @@ use crate::{
 };
 use bevy::{
     ecs::{Commands, Entity, Mut, ResMut},
-    math::{Vec2, Vec3},
+    math::Vec3,
     prelude::{Events, Transform},
 };
 

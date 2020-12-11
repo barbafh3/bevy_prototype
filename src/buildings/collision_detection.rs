@@ -42,7 +42,9 @@ pub fn sys_filter_collision_events(
         let mut warehouse: Option<Mut<Warehouse>> = None;
         let mut construction: Option<(Entity, Mut<Construction>)> = None;
 
+        #[allow(unused_assignments)]
         let mut entity1_type: PossibleEntities = PossibleEntities::None;
+        #[allow(unused_assignments)]
         let mut entity2_type: PossibleEntities = PossibleEntities::None;
 
         entity1_type = filter_entity_type(
