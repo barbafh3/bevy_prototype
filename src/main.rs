@@ -20,7 +20,8 @@ use bevy_tilemap::{
 use buildings::{
     collision_detection::sys_filter_collision_events,
     construction::states::{construction::sys_builder_request_event, sys_run_construction_states},
-    stockpile::{sys_update_stockpile_storage, Stockpile},
+    stockpile::Stockpile,
+    storage_building::{sys_update_building_storage, StorageBuilding},
     sys_spawn_building,
     warehouse::states::sys_run_warehouse_states,
     CurrentBuilding,
@@ -87,7 +88,13 @@ fn startup(
             sprite: Sprite::new(Vec2::new(16.0, 16.0) * 2.0),
             ..Default::default()
         })
-        .with(Stockpile::new(1000, storage))
+        .with(Stockpile)
+        .with(StorageBuilding::new(
+            1000,
+            storage,
+            get_resources_list(),
+            get_resources_list(),
+        ))
         .current_entity()
         .unwrap();
     let rigid_body = RigidBodyBuilder::new_dynamic();
@@ -182,7 +189,7 @@ fn building_systems(app: &mut AppBuilder) {
     app.add_system(sys_run_construction_states.system());
     app.add_system(sys_run_warehouse_states.system());
     app.add_system(sys_filter_collision_events.system());
-    app.add_system(sys_update_stockpile_storage.system());
+    app.add_system(sys_update_building_storage.system());
 }
 
 fn villager_systems(app: &mut AppBuilder) {

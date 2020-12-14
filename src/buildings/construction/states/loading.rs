@@ -25,6 +25,7 @@ pub fn state_loading_construction(
         });
         construction.state = ConstructionStates::Construction;
     } else if !construction.has_requested_resources {
+        println!("ConstructionLoading: creating hauls...");
         create_haul_tasks(commands, &mut construction, &entity);
         construction.has_requested_resources = true;
     }
@@ -56,6 +57,7 @@ pub(crate) fn create_haul_tasks(
                 None,
             );
             commands.spawn((GameTask, haul));
+            println!("ConstructionLoading: Haul created.");
         }
     }
 }

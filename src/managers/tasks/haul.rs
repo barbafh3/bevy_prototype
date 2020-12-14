@@ -1,8 +1,6 @@
 use super::TaskFinished;
 use crate::{
-    buildings::stockpile::Stockpile,
-    buildings::storage::StorageRead,
-    buildings::storage_data::StorageDataRead,
+    buildings::storage_building::{get_stored_amount, StorageBuilding},
     characters::hauler::Hauler,
     constants::{enums::GameResources, tasks::HAULER_CAPACITY},
     managers::storage::GlobalStorage,
@@ -55,7 +53,7 @@ pub fn sys_run_haul_tasks(
     mut events: ResMut<Events<TaskFinished>>,
     mut haul_query: Query<(Entity, &mut Haul)>,
     mut idle_query: Query<(Entity, &IdleVillager, &mut Hauler)>,
-    mut storage_query: Query<(Entity, &mut Stockpile)>,
+    mut storage_query: Query<(Entity, &mut StorageBuilding)>,
 ) {
     for (entity, mut haul) in haul_query.iter_mut() {
         run_haul(
@@ -85,7 +83,7 @@ fn run_haul(
     events: &mut ResMut<Events<TaskFinished>>,
     global_storage: &mut ResMut<GlobalStorage>,
     idle_query: &mut Query<(Entity, &IdleVillager, &mut Hauler)>,
-    storage_query: &mut Query<(Entity, &mut Stockpile)>,
+    storage_query: &mut Query<(Entity, &mut StorageBuilding)>,
 ) {
     if !haul.has_loaded {
         let required_haulers_raw: f32 = haul.total_resource_amount as f32 / HAULER_CAPACITY as f32;
@@ -97,49 +95,16 @@ fn run_haul(
             .get_global_resouce_amount(haul.resource_type)
             .clone();
         if available_resource_amount >= haul.total_resource_amount {
-            if haul.total_resource_amount > 0 && haul.amount_reserved < haul.total_resource_amount {
+            let resources_need_to_be_hauled: bool =
+                haul.total_resource_amount > 0 && haul.amount_reserved < haul.total_resource_amount;
+            if resources_need_to_be_hauled {
                 if haul.hauler_list.len() <= 0 {
                     if haul.required_haulers > 0 {
                         get_idle_haulers(haul, idle_query);
                     }
                 } else {
                     if haul.required_haulers > 0 {
-                        let mut removal_list: Vec<Entity> = vec![];
-                        for entity in haul.hauler_list.iter() {
-                            if let Ok(result) = idle_query.get_mut(*entity) {
-                                let (_, _, mut hauler) = result;
-                                let amount_available =
-                                    haul.total_resource_amount - haul.amount_reserved;
-                                hauler.current_resource = Some(haul.resource_type);
-                                hauler.resource_destination = Some(haul.resource_requester);
-                                match haul.resource_origin {
-                                    Some(_origin) => hauler.resource_origin = haul.resource_origin,
-                                    None => {
-                                        for (entity, storage_building) in storage_query.iter_mut() {
-                                            let stored_amount = storage_building
-                                                .get_storage_data()
-                                                .get_stored_amount(
-                                                    hauler.current_resource.unwrap(),
-                                                );
-                                            if stored_amount >= 0 {
-                                                hauler.resource_origin = Some(entity);
-                                            }
-                                        }
-                                    }
-                                }
-                                if amount_available > HAULER_CAPACITY {
-                                    hauler.amount_requested = HAULER_CAPACITY
-                                } else {
-                                    hauler.amount_requested = amount_available;
-                                }
-                                haul.amount_reserved = hauler.amount_requested;
-                                haul.required_haulers -= 1;
-                                haul.working_haulers += 1;
-                                removal_list.push(*entity);
-                            }
-                        }
-                        haul.hauler_list
-                            .retain(|entity| !removal_list.contains(entity));
+                        filter_hauler_list(haul, idle_query, storage_query);
                     }
                 }
             }
@@ -153,5 +118,58 @@ fn run_haul(
 fn get_idle_haulers(haul: &mut Haul, idle_query: &mut Query<(Entity, &IdleVillager, &mut Hauler)>) {
     for (entity, _, _) in idle_query.iter_mut() {
         haul.hauler_list.push(entity);
+    }
+}
+
+fn filter_hauler_list(
+    haul: &mut Haul,
+    idle_query: &mut Query<(Entity, &IdleVillager, &mut Hauler)>,
+    storage_query: &mut Query<(Entity, &mut StorageBuilding)>,
+) {
+    let mut removal_list: Vec<Entity> = vec![];
+    for entity in haul.hauler_list.clone().iter_mut() {
+        if let Some(activated_hauler) = activate_hauler(haul, entity, idle_query, storage_query) {
+            removal_list.push(activated_hauler);
+        }
+    }
+    haul.hauler_list
+        .retain(|entity| !removal_list.contains(entity));
+}
+
+fn activate_hauler(
+    haul: &mut Haul,
+    entity: &Entity,
+    idle_query: &mut Query<(Entity, &IdleVillager, &mut Hauler)>,
+    storage_query: &mut Query<(Entity, &mut StorageBuilding)>,
+) -> Option<Entity> {
+    if let Ok(result) = idle_query.get_mut(*entity) {
+        let (_, _, mut hauler) = result;
+        let amount_available = haul.total_resource_amount - haul.amount_reserved;
+        hauler.current_resource = Some(haul.resource_type);
+        hauler.resource_destination = Some(haul.resource_requester);
+        match haul.resource_origin {
+            Some(_origin) => hauler.resource_origin = haul.resource_origin,
+            None => {
+                for (entity, mut storage_building) in storage_query.iter_mut() {
+                    let stored_amount =
+                        get_stored_amount(&mut storage_building, hauler.current_resource.unwrap());
+                    if stored_amount >= 0 {
+                        hauler.resource_origin = Some(entity);
+                    }
+                }
+            }
+        }
+        if amount_available > HAULER_CAPACITY {
+            hauler.amount_requested = HAULER_CAPACITY
+        } else {
+            hauler.amount_requested = amount_available;
+        }
+        haul.amount_reserved = hauler.amount_requested;
+        haul.required_haulers -= 1;
+        haul.working_haulers += 1;
+        return Some(*entity);
+    // removal_list.push(*entity);
+    } else {
+        return None;
     }
 }

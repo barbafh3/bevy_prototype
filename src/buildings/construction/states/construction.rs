@@ -52,8 +52,8 @@ fn create_correct_building_component(
     construction_component: &mut ConstructionTypes,
 ) {
     match construction_component {
-        ConstructionTypes::WarehouseParams(capacity) => {
-            commands.insert_one(*entity, Warehouse::new(capacity.clone()));
+        ConstructionTypes::WarehouseParams(_capacity) => {
+            commands.insert_one(*entity, Warehouse::new());
         } // ConstructionTypes::WoodcuttersHutParams(input_capacity, storage_capacity) => {
           //     commands.insert_one(
           //         *entity,

@@ -54,7 +54,7 @@ pub fn spawn_villager(
                     sprite: Sprite::new(Vec2::new(16.0, 16.0)),
                     ..Default::default()
                 })
-                .with(Hauler::new(50.0, 3.0, 20.0))
+                .with(Hauler::new())
                 .current_entity()
                 .unwrap();
             let rigid_body = RigidBodyBuilder::new_dynamic()

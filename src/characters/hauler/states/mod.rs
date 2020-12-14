@@ -3,6 +3,8 @@ pub mod finished;
 pub mod idle;
 pub mod loading;
 
+use crate::characters::VillagerMovement;
+
 use self::{
     carrying::state_hauler_carrying, finished::state_hauler_finished_work, idle::state_hauler_idle,
     loading::state_hauler_loading,
@@ -30,18 +32,20 @@ pub fn sys_run_hauler_state(
     mut query: Query<(
         Entity,
         &mut Hauler,
+        &mut VillagerMovement,
         &Transform,
         &mut RigidBodyHandleComponent,
     )>,
     transform_query: Query<&Transform>,
 ) {
-    for (entity, mut hauler, transform, rb_handle) in query.iter_mut() {
+    for (entity, mut hauler, mut movement, transform, rb_handle) in query.iter_mut() {
         match hauler.state {
             HaulerStates::Idle => state_hauler_idle(
                 time.delta_seconds,
                 &mut commands,
                 entity,
                 &mut hauler,
+                &mut movement,
                 transform,
                 &mut rb_set,
                 rb_handle,
@@ -51,6 +55,7 @@ pub fn sys_run_hauler_state(
                     &mut commands,
                     entity,
                     &mut hauler,
+                    &mut movement,
                     transform,
                     &mut rb_set,
                     rb_handle,
@@ -59,6 +64,7 @@ pub fn sys_run_hauler_state(
             }
             HaulerStates::Carrying => state_hauler_carrying(
                 &mut hauler,
+                &mut movement,
                 transform,
                 &mut rb_set,
                 rb_handle,
@@ -68,6 +74,7 @@ pub fn sys_run_hauler_state(
                 &mut commands,
                 entity,
                 &mut hauler,
+                &mut movement,
                 transform,
                 &mut rb_set,
                 rb_handle,

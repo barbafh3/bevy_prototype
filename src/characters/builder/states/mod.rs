@@ -6,7 +6,7 @@ use self::{
     finished::state_builder_finished_work, idle::state_builder_idle, working::state_builder_working,
 };
 use super::Builder;
-use crate::buildings::construction::Construction;
+use crate::{buildings::construction::Construction, characters::VillagerMovement};
 use bevy::{
     core::Time,
     ecs::{Commands, Entity, Query, Res, ResMut},
@@ -28,18 +28,20 @@ pub fn sys_run_builder_states(
     mut query: Query<(
         Entity,
         &mut Builder,
+        &mut VillagerMovement,
         &Transform,
         &mut RigidBodyHandleComponent,
     )>,
     mut construction_query: Query<&mut Construction>,
 ) {
-    for (entity, mut builder, transform, rb_handle) in query.iter_mut() {
+    for (entity, mut builder, mut movement, transform, rb_handle) in query.iter_mut() {
         match builder.state {
             BuilderStates::Idle => state_builder_idle(
                 time.delta_seconds,
                 &mut commands,
                 entity,
                 &mut builder,
+                &mut movement,
                 &transform,
                 &mut rb_set,
                 rb_handle,

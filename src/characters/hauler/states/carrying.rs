@@ -1,4 +1,4 @@
-use crate::characters::hauler::Hauler;
+use crate::characters::{hauler::Hauler, VillagerMovement};
 use bevy::{
     ecs::{Mut, Query, ResMut},
     prelude::Transform,
@@ -9,6 +9,7 @@ use bevy_rapier2d::{
 
 pub fn state_hauler_carrying(
     hauler: &mut Hauler,
+    movement: &mut VillagerMovement,
     transform: &Transform,
     rb_set: &mut ResMut<RigidBodySet>,
     rb_handle: Mut<RigidBodyHandleComponent>,
@@ -25,7 +26,7 @@ pub fn state_hauler_carrying(
         if is_far_enough {
             let target_vector = Vector2::new(vector.x(), vector.y());
             let direction = target_vector.normalize();
-            rb.set_linvel(direction * hauler.movement.speed, true);
+            rb.set_linvel(direction * movement.speed, true);
         }
     } else {
         hauler.resource_destination = None;

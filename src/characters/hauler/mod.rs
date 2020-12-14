@@ -1,33 +1,23 @@
 pub mod states;
 
 use self::states::HaulerStates;
-use super::{get_new_position, VillagerMovement};
+use super::VillagerMovement;
 use crate::{
-    constants::{enums::GameResources, enums::Jobs, OUTDOORS_IDLE_RADIUS},
-    get_idle_point,
+    constants::{enums::GameResources, enums::Jobs, OUTDOORS_IDLE_RADIUS, VILLAGER_SPEED},
     managers::villagers::IdleVillager,
 };
 use bevy::{
-    ecs::{Commands, Entity, Mut, Res, ResMut},
+    ecs::{Commands, Entity, Res, ResMut},
     math::{Vec2, Vec3},
     prelude::{AssetServer, Assets, SpriteComponents, Transform},
     sprite::{ColorMaterial, Sprite},
 };
-use bevy_rapier2d::{
-    na::Vector2,
-    physics::RigidBodyHandleComponent,
-    rapier::{
-        dynamics::{RigidBodyBuilder, RigidBodySet},
-        geometry::ColliderBuilder,
-    },
-};
+use bevy_rapier2d::rapier::{dynamics::RigidBodyBuilder, geometry::ColliderBuilder};
 
 #[derive(Debug, PartialEq)]
 pub struct Hauler {
     villager_type: Jobs,
     pub state: HaulerStates,
-    pub movement: VillagerMovement,
-    pub movement_target: Vec3,
     pub capacity: i32,
     is_idle: bool,
     pub current_haul: Option<Entity>,
@@ -38,17 +28,10 @@ pub struct Hauler {
 }
 
 impl Hauler {
-    pub fn new(speed: f32, base_movement_tick: f32, movement_radius: f32) -> Hauler {
+    pub fn new() -> Hauler {
         Hauler {
             villager_type: Jobs::Hauler,
             state: HaulerStates::Idle,
-            movement: VillagerMovement {
-                speed: speed,
-                base_tick: base_movement_tick,
-                tick: 0.0,
-                radius: movement_radius,
-            },
-            movement_target: Vec3::new(0.0, 0.0, 0.0),
             capacity: 0,
             is_idle: true,
             current_haul: None,
@@ -74,7 +57,14 @@ pub fn spawn_new_hauler(
             sprite: Sprite::new(Vec2::new(16.0, 16.0) * 1.5),
             ..Default::default()
         })
-        .with(Hauler::new(50.0, 3.0, OUTDOORS_IDLE_RADIUS))
+        .with(Hauler::new())
+        .with(VillagerMovement {
+            speed: VILLAGER_SPEED,
+            base_tick: 3.0,
+            tick: 3.0,
+            radius: OUTDOORS_IDLE_RADIUS,
+            target: Vec3::new(0.0, 0.0, 0.0),
+        })
         .with(IdleVillager)
         .current_entity()
         .unwrap();
@@ -83,42 +73,4 @@ pub fn spawn_new_hauler(
         .sensor(true)
         .user_data(hauler.to_bits() as u128);
     commands.insert(hauler, (rigid_body, collider));
-}
-
-pub fn hauler_idle_move(
-    hauler: &mut Hauler,
-    delta: f32,
-    transform: &Transform,
-    rb_set: &mut ResMut<RigidBodySet>,
-    rb_handle: Mut<RigidBodyHandleComponent>,
-) {
-    let rb_index = rb_handle.handle();
-    let rb = rb_set.get_mut(rb_index).unwrap();
-    hauler.movement.tick = run_hauler_movement_tick(hauler, delta);
-    let can_change_target = hauler.movement.tick <= 0.0;
-    if can_change_target {
-        hauler.movement_target = get_new_position(
-            get_idle_point().x(),
-            get_idle_point().y(),
-            hauler.movement.radius.clone(),
-        );
-        hauler.movement.tick = hauler.movement.base_tick.clone();
-    }
-    let vector = hauler.movement_target - transform.translation;
-    let is_far_enough = vector.x().abs() > 2.0 && vector.y().abs() > 2.0;
-    if is_far_enough {
-        let target_vector = Vector2::new(vector.x(), vector.y());
-        let direction = target_vector.normalize();
-        rb.set_linvel(direction * hauler.movement.speed, true);
-    } else {
-        rb.set_linvel(Vector2::new(0.0, 0.0), true);
-    }
-}
-
-pub fn run_hauler_movement_tick(hauler: &mut Hauler, delta: f32) -> f32 {
-    if hauler.movement.tick > 0.0 {
-        return hauler.movement.tick - delta;
-    } else {
-        return hauler.movement.tick;
-    }
 }

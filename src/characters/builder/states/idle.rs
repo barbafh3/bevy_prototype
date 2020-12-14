@@ -4,23 +4,23 @@ use bevy::{
 };
 use bevy_rapier2d::{physics::RigidBodyHandleComponent, rapier::dynamics::RigidBodySet};
 
+use super::BuilderStates;
 use crate::{
-    characters::builder::{builder_idle_move, Builder},
+    characters::{builder::Builder, villager_idle_move, VillagerMovement},
     managers::villagers::IdleVillager,
 };
-
-use super::BuilderStates;
 
 pub fn state_builder_idle(
     delta: f32,
     commands: &mut Commands,
     entity: Entity,
     builder: &mut Mut<Builder>,
+    movement: &mut VillagerMovement,
     transform: &Transform,
     rb_set: &mut ResMut<RigidBodySet>,
     rb_handle: Mut<RigidBodyHandleComponent>,
 ) {
-    builder_idle_move(builder, delta, transform, rb_set, rb_handle);
+    villager_idle_move(movement, delta, transform, rb_set, rb_handle);
     if !builder.is_idle {
         commands.insert_one(entity, IdleVillager);
         builder.is_idle = true;
