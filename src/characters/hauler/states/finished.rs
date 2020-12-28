@@ -34,9 +34,9 @@ pub fn state_hauler_finished_work(
     }
 
     let vector = movement.target - transform.translation;
-    let is_far_enough = vector.x().abs() > 2.0 && vector.y().abs() > 2.0;
+    let is_far_enough = vector.x.abs() > 2.0 && vector.y.abs() > 2.0;
     if is_far_enough {
-        let target_vector = Vector2::new(vector.x(), vector.y());
+        let target_vector = Vector2::new(vector.x, vector.y);
         let direction = target_vector.normalize();
         rb.set_linvel(direction * movement.speed, true);
     } else {

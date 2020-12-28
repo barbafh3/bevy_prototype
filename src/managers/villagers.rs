@@ -5,7 +5,7 @@ use bevy::{
     math::{Vec2, Vec3},
     prelude::EventReader,
     prelude::Events,
-    prelude::{AssetServer, Assets, SpriteComponents, Transform},
+    prelude::{AssetServer, Assets, SpriteBundle, Transform},
     sprite::ColorMaterial,
     sprite::Sprite,
 };
@@ -20,7 +20,7 @@ pub struct SpawnRequest {
 pub struct IdleVillager;
 
 pub fn sys_new_villager_requests(
-    mut commands: Commands,
+    commands: &mut Commands,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     mut spawn_request_reader: Local<EventReader<SpawnRequest>>,
@@ -28,7 +28,7 @@ pub fn sys_new_villager_requests(
 ) {
     for spawn_event in spawn_request_reader.iter(&spawn_request_event) {
         spawn_villager(
-            &mut commands,
+            commands,
             &asset_server,
             &mut materials,
             spawn_event.job,
@@ -48,7 +48,7 @@ pub fn spawn_villager(
         Jobs::Hauler => {
             let hauler_texture = asset_server.load("horse.png");
             let hauler = commands
-                .spawn(SpriteComponents {
+                .spawn(SpriteBundle {
                     material: materials.add(hauler_texture.into()),
                     transform: Transform::from_translation(position),
                     sprite: Sprite::new(Vec2::new(16.0, 16.0)),

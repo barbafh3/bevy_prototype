@@ -42,6 +42,6 @@ pub fn sys_cursor_position(
 
         // apply the camera transform
         let pos_wld = camera_transform.compute_matrix() * p.extend(0.0).extend(1.0);
-        camera_position.position = Vec2::new(pos_wld.x(), pos_wld.y());
+        camera_position.position = Vec2::new(pos_wld.x, pos_wld.y);
     }
 }

@@ -12,11 +12,6 @@ use bevy_rapier2d::{
     rapier::{dynamics::RigidBodyBuilder, geometry::ColliderBuilder},
     render::RapierRenderPlugin,
 };
-use bevy_tilemap::{
-    chunk::WorldChunk,
-    map::{TileMap, WorldMap},
-    ChunkTilesPlugin,
-};
 use buildings::{
     collision_detection::sys_filter_collision_events,
     construction::states::{construction::sys_builder_request_event, sys_run_construction_states},
@@ -39,23 +34,21 @@ use managers::{
         haul::{sys_close_haul_tasks, sys_run_haul_tasks},
         TaskFinished,
     },
-    tilemap::{build_tilemap, load_atlas, MapState, TileSpriteHandles, WorldTile},
+    tilemap::load_tilemap,
     villagers::{sys_new_villager_requests, SpawnRequest},
 };
 
 fn startup(
-    mut commands: Commands,
-    mut map: ResMut<WorldMap<WorldTile, WorldChunk<WorldTile>>>,
-    mut tile_sprite_handles: ResMut<TileSpriteHandles>,
+    commands: &mut Commands,
     asset_server: Res<AssetServer>,
     mut materials: ResMut<Assets<ColorMaterial>>,
     // mut rapier_config: ResMut<RapierConfiguration>,
 ) {
     // rapier_config.gravity = Vector2::new(5.0, 5.0);
-    tile_sprite_handles.handles = asset_server.load_folder("textures").unwrap();
-    map.set_dimensions(Vec2::new(3.0, 3.0));
 
-    let camera = Camera2dComponents::default();
+    load_tilemap("assets/tilemap/tilemap.json");
+
+    let camera = Camera2dBundle::default();
     let e = commands.spawn(camera).current_entity().unwrap();
     commands.insert_resource(CustomCursorState {
         cursor: Default::default(),
@@ -67,13 +60,13 @@ fn startup(
 
     commands.insert_resource(CurrentBuilding { entity: None });
 
-    commands.spawn(UiCameraComponents::default());
+    commands.spawn(CameraUiBundle::default());
 
     let idle_point_texture = asset_server.load("flag.png");
     let idle_point = get_idle_point();
-    commands.spawn(SpriteComponents {
+    commands.spawn(SpriteBundle {
         material: materials.add(idle_point_texture.into()),
-        transform: Transform::from_translation(Vec3::new(idle_point.x(), idle_point.y(), 100.0)),
+        transform: Transform::from_translation(Vec3::new(idle_point.x, idle_point.y, 100.0)),
         sprite: Sprite::new(Vec2::new(16.0, 16.0) * 2.0),
         ..Default::default()
     });
@@ -82,7 +75,7 @@ fn startup(
     let mut storage = get_resources_list();
     storage[GameResources::Wood] = 100;
     let stockpile = commands
-        .spawn(SpriteComponents {
+        .spawn(SpriteBundle {
             material: materials.add(stockpile_texture.into()),
             transform: Transform::from_translation(Vec3::new(0.0, 0.0, 100.0)),
             sprite: Sprite::new(Vec2::new(16.0, 16.0) * 2.0),
@@ -104,20 +97,20 @@ fn startup(
     commands.insert(stockpile, (rigid_body, collider));
 
     spawn_new_hauler(
-        &mut commands,
+        commands,
         &asset_server,
         &mut materials,
         Vec3::new(0.0, 0.0, 100.0),
     );
     spawn_new_hauler(
-        &mut commands,
+        commands,
         &asset_server,
         &mut materials,
         Vec3::new(10.0, 10.0, 100.0),
     );
 
     spawn_new_builder(
-        &mut commands,
+        commands,
         &asset_server,
         &mut materials,
         Vec3::new(-10.0, -10.0, 100.0),
@@ -135,20 +128,13 @@ fn startup(
 }
 
 fn load_plugins(app: &mut AppBuilder) {
-    app.add_plugins(DefaultPlugins)
-        .add_plugin(RapierPhysicsPlugin)
-        .add_plugin(RapierRenderPlugin)
-        .add_plugin(ChunkTilesPlugin::<
-            WorldTile,
-            WorldChunk<WorldTile>,
-            WorldMap<WorldTile, WorldChunk<WorldTile>>,
-        >::default());
+    app.add_plugins(DefaultPlugins);
+    app.add_plugin(RapierPhysicsPlugin);
+    app.add_plugin(RapierRenderPlugin);
 }
 
 fn load_resources(app: &mut AppBuilder) {
-    app.add_resource(GlobalStorage::new())
-        .init_resource::<TileSpriteHandles>()
-        .init_resource::<MapState>();
+    app.add_resource(GlobalStorage::new());
 }
 
 fn load_startup_systems(app: &mut AppBuilder) {
@@ -157,7 +143,7 @@ fn load_startup_systems(app: &mut AppBuilder) {
 
 fn load_systems(app: &mut AppBuilder) {
     core_systems(app);
-    tilemap_systems(app);
+    // tilemap_systems(app);
     building_systems(app);
     task_systems(app);
     villager_systems(app);
@@ -178,10 +164,10 @@ fn task_systems(app: &mut AppBuilder) {
         .add_system(sys_close_haul_tasks.system());
 }
 
-fn tilemap_systems(app: &mut AppBuilder) {
-    app.add_system(load_atlas.system())
-        .add_system(build_tilemap.system());
-}
+// fn tilemap_systems(app: &mut AppBuilder) {
+// app.add_system(load_atlas.system())
+//     .add_system(build_tilemap.system());
+// }
 
 fn building_systems(app: &mut AppBuilder) {
     app.add_system(sys_spawn_building.system());
@@ -202,16 +188,7 @@ pub fn get_idle_point() -> Vec3 {
     Vec3::new(100.0, 100.0, 0.0)
 }
 
-// fn print_events(events: Res<EventQueue>) {
-//     while let Ok(proximity_event) = events.proximity_events.pop() {
-//         println!("Received proximity event: {:?}", proximity_event);
-//     }
-
-//     while let Ok(contact_event) = events.contact_events.pop() {
-//         println!("Received contact event: {:?}", contact_event);
-//     }
-// }
-
+#[bevy_main]
 fn main() {
     let mut app = App::build();
     load_events(&mut app);

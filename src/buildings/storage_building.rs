@@ -67,6 +67,7 @@ fn on_storage_building_intersect(
     global_storage: &mut ResMut<GlobalStorage>,
     hauler: &mut Mut<Hauler>,
 ) {
+    println!("StorageBuilding: Proximity!");
     match hauler.state {
         HaulerStates::Loading => {
             let removal_result = remove_from_storage_building(

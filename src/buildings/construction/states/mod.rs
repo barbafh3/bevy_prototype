@@ -19,7 +19,7 @@ use bevy::{
 use bevy_rapier2d::{physics::RigidBodyHandleComponent, rapier::dynamics::RigidBodySet};
 
 pub fn sys_run_construction_states(
-    mut commands: Commands,
+    commands: &mut Commands,
     mut events: ResMut<Events<BuilderRequest>>,
     camera_data: Res<CameraData>,
     mouse_input: Res<Input<MouseButton>>,
@@ -35,7 +35,7 @@ pub fn sys_run_construction_states(
     for (entity, mut construction, transform, rb_handle) in query.iter_mut() {
         match construction.state {
             super::ConstructionStates::Placing => state_placing_construction(
-                &mut commands,
+                commands,
                 &mouse_input,
                 &mut current_building,
                 &mut construction,
@@ -43,15 +43,11 @@ pub fn sys_run_construction_states(
                 &mut rb_set,
                 rb_handle,
             ),
-            super::ConstructionStates::Loading => state_loading_construction(
-                &mut commands,
-                &transform,
-                &mut events,
-                construction,
-                entity,
-            ),
+            super::ConstructionStates::Loading => {
+                state_loading_construction(commands, &transform, &mut events, construction, entity)
+            }
             super::ConstructionStates::Construction => {
-                state_construction_work(&mut commands, &entity, &mut construction)
+                state_construction_work(commands, &entity, &mut construction)
             }
         }
     }

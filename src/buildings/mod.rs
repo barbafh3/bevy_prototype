@@ -15,9 +15,8 @@ use bevy::{
     math::Vec2,
     math::Vec3,
     prelude::KeyCode,
-    prelude::SpriteComponents,
     prelude::Transform,
-    prelude::{AssetServer, Assets},
+    prelude::{AssetServer, Assets, SpriteBundle},
     sprite::ColorMaterial,
     sprite::Sprite,
 };
@@ -34,7 +33,7 @@ pub struct DisabledBuilding;
 pub struct Building;
 
 pub fn sys_spawn_building(
-    mut commands: Commands,
+    commands: &mut Commands,
     keyboard_input: Res<Input<KeyCode>>,
     camera_data: Res<CameraData>,
     asset_server: Res<AssetServer>,
@@ -50,11 +49,11 @@ pub fn sys_spawn_building(
     let required_resources = enum_map! { GameResources::Wood => 50, _ => 0 };
     let warehouse_texture = asset_server.load("under_construction.png");
     let warehouse = commands
-        .spawn(SpriteComponents {
+        .spawn(SpriteBundle {
             material: materials.add(warehouse_texture.into()),
             transform: Transform::from_translation(Vec3::new(
-                camera_data.position.x(),
-                camera_data.position.y(),
+                camera_data.position.x,
+                camera_data.position.y,
                 100.0,
             )),
             sprite: Sprite::new(Vec2::new(16.0, 16.0) * 2.0),

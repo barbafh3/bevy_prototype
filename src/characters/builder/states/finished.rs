@@ -1,4 +1,8 @@
-use crate::{characters::builder::Builder, get_idle_point, managers::villagers::IdleVillager};
+use crate::{
+    characters::{builder::Builder, VillagerMovement},
+    get_idle_point,
+    managers::villagers::IdleVillager,
+};
 use bevy::{
     ecs::{Commands, Entity, Mut, ResMut},
     prelude::Transform,
@@ -13,6 +17,7 @@ pub fn state_builder_finished_work(
     commands: &mut Commands,
     entity: Entity,
     builder: &mut Mut<Builder>,
+    movement: &mut Mut<VillagerMovement>,
     transform: &Transform,
     rb_set: &mut ResMut<RigidBodySet>,
     rb_handle: Mut<RigidBodyHandleComponent>,
@@ -33,11 +38,11 @@ pub fn state_builder_finished_work(
     }
 
     let vector = get_idle_point() - transform.translation;
-    let is_far_enough = vector.x().abs() > 2.0 && vector.y().abs() > 2.0;
+    let is_far_enough = vector.x.abs() > 2.0 && vector.y.abs() > 2.0;
     if is_far_enough {
-        let target_vector = Vector2::new(vector.x(), vector.y());
+        let target_vector = Vector2::new(vector.x, vector.y);
         let direction = target_vector.normalize();
-        rb.set_linvel(direction * builder.movement.speed, true);
+        rb.set_linvel(direction * movement.speed, true);
     } else {
         println!("Hauler is now idle");
         rb.set_linvel(Vector2::new(0.0, 0.0), true);

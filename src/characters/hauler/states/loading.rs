@@ -29,9 +29,9 @@ pub fn state_hauler_loading(
     let target_transform = origin_query.get(hauler.resource_origin.unwrap()).unwrap();
     if hauler.capacity <= 0 {
         let vector = target_transform.translation - transform.translation;
-        let is_far_enough = vector.x().abs() > 2.0 || vector.y().abs() > 2.0;
+        let is_far_enough = vector.x.abs() > 2.0 || vector.y.abs() > 2.0;
         if is_far_enough {
-            let target_vector = Vector2::new(vector.x(), vector.y());
+            let target_vector = Vector2::new(vector.x, vector.y);
             let direction = target_vector.normalize();
             let distance: Vector2<f32> = direction * movement.speed;
             rb.set_linvel(distance, true);

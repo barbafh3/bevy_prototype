@@ -22,7 +22,7 @@ pub enum BuilderStates {
 }
 
 pub fn sys_run_builder_states(
-    mut commands: Commands,
+    commands: &mut Commands,
     time: Res<Time>,
     mut rb_set: ResMut<RigidBodySet>,
     mut query: Query<(
@@ -37,8 +37,8 @@ pub fn sys_run_builder_states(
     for (entity, mut builder, mut movement, transform, rb_handle) in query.iter_mut() {
         match builder.state {
             BuilderStates::Idle => state_builder_idle(
-                time.delta_seconds,
-                &mut commands,
+                time.delta_seconds(),
+                commands,
                 entity,
                 &mut builder,
                 &mut movement,
@@ -47,19 +47,21 @@ pub fn sys_run_builder_states(
                 rb_handle,
             ),
             BuilderStates::Working => state_builder_working(
-                time.delta_seconds,
+                time.delta_seconds(),
                 entity,
-                &mut commands,
+                commands,
                 &mut builder,
+                &mut movement,
                 &transform,
                 &mut rb_set,
                 rb_handle,
                 &mut construction_query,
             ),
             BuilderStates::Finished => state_builder_finished_work(
-                &mut commands,
+                commands,
                 entity,
                 &mut builder,
+                &mut movement,
                 transform,
                 &mut rb_set,
                 rb_handle,

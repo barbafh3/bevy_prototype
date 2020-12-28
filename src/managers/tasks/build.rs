@@ -29,6 +29,6 @@ impl Drop for Build {
 //     mut idle_query: Query<(Entity, &IdleVillager, &mut Builder)>,
 // ) {
 //     for (entity, mut build) in build_query.iter_mut() {
-//         build.run_task(time.delta_seconds);
+//         build.run_task(time.delta_seconds());
 //     }
 // }

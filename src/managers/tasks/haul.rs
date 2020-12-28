@@ -68,7 +68,7 @@ pub fn sys_run_haul_tasks(
 }
 
 pub fn sys_close_haul_tasks(
-    mut commands: Commands,
+    commands: &mut Commands,
     mut my_event_reader: Local<EventReader<TaskFinished>>,
     events: Res<Events<TaskFinished>>,
 ) {

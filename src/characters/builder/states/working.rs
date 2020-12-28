@@ -1,5 +1,7 @@
 use crate::{
-    buildings::construction::Construction, characters::builder::Builder, get_idle_point,
+    buildings::construction::Construction,
+    characters::{builder::Builder, VillagerMovement},
+    get_idle_point,
     managers::villagers::IdleVillager,
 };
 use bevy::{
@@ -24,6 +26,7 @@ pub fn state_builder_working(
     entity: Entity,
     commands: &mut Commands,
     builder: &mut Mut<Builder>,
+    movement: &mut Mut<VillagerMovement>,
     transform: &Transform,
     rb_set: &mut ResMut<RigidBodySet>,
     rb_handle: Mut<RigidBodyHandleComponent>,
@@ -39,12 +42,12 @@ pub fn state_builder_working(
     if let Ok(mut construction) =
         construction_query.get_mut(builder.requested_construction.unwrap())
     {
-        let vector = builder.movement_target - transform.translation;
-        let is_far_enough = vector.x().abs() > 2.0 && vector.y().abs() > 2.0;
+        let vector = movement.target - transform.translation;
+        let is_far_enough = vector.x.abs() > 2.0 && vector.y.abs() > 2.0;
         if is_far_enough {
-            let target_vector = Vector2::new(vector.x(), vector.y());
+            let target_vector = Vector2::new(vector.x, vector.y);
             let direction = target_vector.normalize();
-            rb.set_linvel(direction * builder.movement.speed, true);
+            rb.set_linvel(direction * movement.speed, true);
         } else {
             let requested_and_current_building_exist = !builder.requested_construction.is_none()
                 && !builder.current_construction.is_none();
@@ -58,7 +61,7 @@ pub fn state_builder_working(
                         construction.construction_time -= builder.construction_tick * delta;
                     } else {
                         println!("BuilderWorking: Builder is now idle");
-                        builder.movement_target = get_idle_point();
+                        movement.target = get_idle_point();
                         builder.requested_construction = None;
                         builder.state = BuilderStates::Finished;
                     }

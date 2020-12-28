@@ -26,7 +26,7 @@ pub enum HaulerStates {
 }
 
 pub fn sys_run_hauler_state(
-    mut commands: Commands,
+    commands: &mut Commands,
     time: Res<Time>,
     mut rb_set: ResMut<RigidBodySet>,
     mut query: Query<(
@@ -41,8 +41,8 @@ pub fn sys_run_hauler_state(
     for (entity, mut hauler, mut movement, transform, rb_handle) in query.iter_mut() {
         match hauler.state {
             HaulerStates::Idle => state_hauler_idle(
-                time.delta_seconds,
-                &mut commands,
+                time.delta_seconds(),
+                commands,
                 entity,
                 &mut hauler,
                 &mut movement,
@@ -52,7 +52,7 @@ pub fn sys_run_hauler_state(
             ),
             HaulerStates::Loading => {
                 state_hauler_loading(
-                    &mut commands,
+                    commands,
                     entity,
                     &mut hauler,
                     &mut movement,
@@ -71,7 +71,7 @@ pub fn sys_run_hauler_state(
                 &transform_query,
             ),
             HaulerStates::Finished => state_hauler_finished_work(
-                &mut commands,
+                commands,
                 entity,
                 &mut hauler,
                 &mut movement,

@@ -36,16 +36,16 @@ pub fn villager_idle_move(
     let can_change_target = movement.tick <= 0.0;
     if can_change_target {
         movement.target = get_new_position(
-            get_idle_point().x(),
-            get_idle_point().y(),
+            get_idle_point().x,
+            get_idle_point().y,
             movement.radius.clone(),
         );
         movement.tick = movement.base_tick.clone();
     }
     let vector = movement.target - transform.translation;
-    let is_far_enough = vector.x().abs() > 2.0 && vector.y().abs() > 2.0;
+    let is_far_enough = vector.x.abs() > 2.0 && vector.y.abs() > 2.0;
     if is_far_enough {
-        let target_vector = Vector2::new(vector.x(), vector.y());
+        let target_vector = Vector2::new(vector.x, vector.y);
         let direction = target_vector.normalize();
         rb.set_linvel(direction * movement.speed, true);
     } else {

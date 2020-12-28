@@ -3,7 +3,7 @@ use crate::{
         construction::{Construction, ConstructionTypes},
         warehouse::Warehouse,
     },
-    characters::builder::Builder,
+    characters::{builder::Builder, VillagerMovement},
     managers::{tasks::build::BuilderRequest, villagers::IdleVillager},
 };
 use bevy::{
@@ -29,16 +29,16 @@ pub fn state_construction_work(
 pub fn sys_builder_request_event(
     events: Res<Events<BuilderRequest>>,
     mut event_reader: Local<EventReader<BuilderRequest>>,
-    mut builder_query: Query<(&IdleVillager, &mut Builder)>,
+    mut builder_query: Query<(&IdleVillager, &mut Builder, &mut VillagerMovement)>,
 ) {
     for event in event_reader.iter(&events) {
         println!("Builders requested...");
         let counter = event.amount;
-        for (_, mut builder) in builder_query.iter_mut() {
+        for (_, mut builder, mut movement) in builder_query.iter_mut() {
             if counter > 0 {
                 println!("Builder on his way...");
                 builder.requested_construction = Some(event.construction);
-                builder.movement_target = event.position;
+                movement.target = event.position;
             } else {
                 break;
             }

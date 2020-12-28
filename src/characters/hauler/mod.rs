@@ -9,7 +9,7 @@ use crate::{
 use bevy::{
     ecs::{Commands, Entity, Res, ResMut},
     math::{Vec2, Vec3},
-    prelude::{AssetServer, Assets, SpriteComponents, Transform},
+    prelude::{AssetServer, Assets, SpriteBundle, Transform},
     sprite::{ColorMaterial, Sprite},
 };
 use bevy_rapier2d::rapier::{dynamics::RigidBodyBuilder, geometry::ColliderBuilder};
@@ -51,7 +51,7 @@ pub fn spawn_new_hauler(
 ) {
     let hauler_texture = asset_server.load("horse.png");
     let hauler = commands
-        .spawn(SpriteComponents {
+        .spawn(SpriteBundle {
             material: materials.add(hauler_texture.into()),
             transform: Transform::from_translation(starting_position),
             sprite: Sprite::new(Vec2::new(16.0, 16.0) * 1.5),

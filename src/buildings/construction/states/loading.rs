@@ -21,7 +21,7 @@ pub fn state_loading_construction(
         events.send(BuilderRequest {
             amount: MAXIMUM_BUILDERS,
             construction: entity,
-            position: Vec3::new(transform.translation.x(), transform.translation.y(), 100.0),
+            position: Vec3::new(transform.translation.x, transform.translation.y, 100.0),
         });
         construction.state = ConstructionStates::Construction;
     } else if !construction.has_requested_resources {
